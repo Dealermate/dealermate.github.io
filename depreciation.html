@@ -207,7 +207,7 @@
       color:var(--muted);
     }
 
-    /* ✅ 감가리포트(통합) */
+    /* ✅ 검수리포트(통합) */
     .result-area{
       border:1px dashed rgba(255,92,92,0.40);
       background: rgba(255,92,92,0.06);
@@ -270,7 +270,7 @@
     .result-list li{ margin:4px 0; color: #f3f4f6; }
     .result-empty{ margin-top:8px; font-size:13px; color: var(--muted); }
 
-    /* ✅ 감가리포트 UI 리프레시 */
+    /* ✅ 검수리포트 UI 리프레시 */
     .result-area{
       border-style: solid;
       background: rgba(255,255,255,0.03);
@@ -2644,7 +2644,7 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 
 .deduction-diagram{position:relative;line-height:0;width:100%;max-width:540px;margin:14px auto 0;background:#fff;border-radius:8px;overflow:hidden;aspect-ratio:1055 / 791}
 .deduction-diagram[data-kind="accident"]{aspect-ratio:1055 / 1718}
-.deduction-diagram>img{display:block;width:100%;height:100%;object-fit:fill}
+.deduction-diagram-plane{position:absolute;inset:0}.deduction-diagram[data-kind="paint"]>.deduction-diagram-plane{inset:3%}.deduction-diagram-plane>img{display:block;width:100%;height:100%;object-fit:fill}
 .deduction-mark{position:absolute;transform:translate(-50%,-50%);display:grid;place-items:center;width:23px;height:23px;border:1.5px solid;border-radius:50%;font-size:12px;font-weight:900;line-height:1;background:#ffffffa0}
 .deduction-mark.paint,.deduction-mark.exchange{color:#d32128}.deduction-mark.repair{color:#1558c0}
 .deduction-coating{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:900;line-height:1.3;color:#1556a5;background:#ffffffe0;padding:1px 3px;white-space:nowrap;border-radius:3px}
@@ -2713,10 +2713,10 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 <button class="page-tab" data-page="1" onclick="showPage(1)">도색</button>
 <button class="page-tab" data-page="2" onclick="showPage(2)">사고</button>
 <button class="page-tab" data-page="3" onclick="showPage(3)">세부상태</button>
-<button class="page-tab" data-page="4" onclick="showPage(4)">감가리포트</button>
+<button class="page-tab" data-page="4" onclick="showPage(4)">검수리포트</button>
 <button class="page-tab" data-page="5" onclick="showPage(5)">저장목록</button>
 </div>
-<!-- 가격 + 감가리포트 -->
+<!-- 가격 + 검수리포트 -->
 <div class="section page-panel active" data-page-panel="0">
 <h2><i class="fa-solid fa-won-sign"></i> 가격</h2>
 <div class="field">
@@ -2726,7 +2726,7 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 </div>
 </div>
 <div class="hint">
-      * 입력한 내용과 감가 결과는 <b>감가리포트</b>에서 확인할 수 있습니다.
+      * 입력한 내용과 감가 결과는 <b>검수리포트</b>에서 확인할 수 있습니다.
     </div>
 </div>
 <!-- 차량정보 -->
@@ -3140,9 +3140,9 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 <button class="btn-soft" onclick="addExtraItem('인테리어')">+ 항목 추가</button>
 </div>
 <div class="detail-navigation"><button type="button" id="detailPrev" onclick="moveDetailBatch(-1)">← 이전</button><span id="detailBatchText" aria-live="polite"></span><button type="button" id="detailNext" onclick="moveDetailBatch(1)">다음 항목 →</button></div><div id="detailEmpty" class="detail-empty" hidden>해당 항목이 없어요.</div><p id="detailReviewHint" class="detail-review-hint"></p></div>
-<!-- 감가리포트 -->
+<!-- 검수리포트 -->
 <div class="section page-panel" data-page-panel="4">
-<h2><i class="fa-solid fa-clipboard-check"></i> 감가리포트</h2>
+<h2><i class="fa-solid fa-clipboard-check"></i> 검수리포트</h2>
 <div class="result-area" id="resultArea" style="display:none;"></div>
 
 <div class="record-action-panel">
@@ -4061,7 +4061,7 @@ function initCoating(){
       });
     }
 
-    // ✅ 감가리포트 렌더
+    // ✅ 검수리포트 렌더
 
 function deductionDiagramData(kind){
  const accident=kind==='accident',parts=accident?DATA.accidentParts:DATA.partNames;
@@ -4077,11 +4077,11 @@ function deductionDiagramData(kind){
 }
 function deductionDiagramHtml(kind){
  const data=deductionDiagramData(kind),e=escapeHtml;
- return '<div class="deduction-diagram" data-kind="'+kind+'"><img src="'+data.src+'" alt="'+(kind==='paint'?'도색 선택 부위 도면':'교환·판금 및 도막측정 도면')+'">'+data.points.map(p=>{
+ return '<div class="deduction-diagram" data-kind="'+kind+'"><div class="deduction-diagram-plane"><img src="'+data.src+'" alt="'+(kind==='paint'?'도색 선택 부위 도면':'교환·판금 및 도막측정 도면')+'">'+data.points.map(p=>{
   const pos='top:'+p.top+'%;left:'+p.left+'%;';
   const mark=p.mark?'<span class="deduction-mark '+(p.mark.includes('X')?'exchange':kind==='paint'?'paint':'repair')+'" style="'+pos+'" title="'+e(p.title)+'">'+p.mark+'</span>':'';
   return mark+(p.value!==null?'<span class="deduction-coating '+(p.value>=400?'high':'')+(p.mark?' with-mark':'')+'" style="'+pos+'" title="'+e(p.title)+'">'+p.value+' μm</span>':'');
- }).join('')+'</div><p class="deduction-diagram-legend">'+(kind==='paint'?'R 도색 선택 부위':'X 교환 · W 판금 · 도막수치는 부위별 최고 측정값')+'</p>';
+ }).join('')+'</div></div><p class="deduction-diagram-legend">'+(kind==='paint'?'R 도색 선택 부위':'X 교환 · W 판금 · 도막수치는 부위별 최고 측정값')+'</p>';
 }
 
     function renderResultBox({selectedPaint, selectedAccidents, deductionLines, paintLines=[], accidentLines=[], detailLines=[], totalDiscount, finalPrice, paintSetoff}){
@@ -4168,7 +4168,7 @@ function deductionDiagramHtml(kind){
 
       box.innerHTML = `
         <div class="result-head">
-          <div class="result-title"><i class="fa-solid fa-clipboard-check"></i> 감가리포트</div>
+          <div class="result-title"><i class="fa-solid fa-clipboard-check"></i> 검수리포트</div>
         </div>
 
         <div class="result-grid">
@@ -4465,7 +4465,7 @@ function deductionDiagramHtml(kind){
       renderInspectionPhotos();
 
       // -----------------------------------------------------
-      // 8. 감가리포트 / 저장상태 초기화
+      // 8. 검수리포트 / 저장상태 초기화
       // -----------------------------------------------------
       const resultBox = document.getElementById('resultArea');
       if(resultBox){
@@ -5546,7 +5546,7 @@ async function copyInspectionSummary(){
   const resultText=(document.getElementById('resultArea')?.innerText||'').trim();
 
   const text=[
-    '[차량 감가리포트]',
+    '[차량 검수리포트]',
     `차량번호: ${carNumber||'-'}`,
     `차량: ${[carName,carGrade].filter(Boolean).join(' / ')||'-'}`,
     `주행거리: ${mileage||'-'}`,
@@ -5560,7 +5560,7 @@ async function copyInspectionSummary(){
   try{
     if(navigator.clipboard && window.isSecureContext){
       await navigator.clipboard.writeText(text);
-      alert('감가리포트를 복사했습니다.');
+      alert('검수리포트를 복사했습니다.');
     }else{
       const ta=document.createElement('textarea');
       ta.value=text;
@@ -5570,7 +5570,7 @@ async function copyInspectionSummary(){
       ta.select();
       document.execCommand('copy');
       ta.remove();
-      alert('감가리포트를 복사했습니다.');
+      alert('검수리포트를 복사했습니다.');
     }
   }catch{
     prompt('아래 내용을 복사해주세요.',text);
@@ -5586,12 +5586,12 @@ function printInspection(){
 
 
 /* =========================================================
-   감가리포트 이미지 캡처
+   검수리포트 이미지 캡처
 ========================================================= */
 async function captureInspectionResult(mode='save'){
   updateAll();
   const resultArea=document.getElementById('resultArea');
-  if(!resultArea || resultArea.style.display==='none'){alert('저장할 감가리포트가 없습니다.');return}
+  if(!resultArea || resultArea.style.display==='none'){alert('저장할 검수리포트가 없습니다.');return}
   try{
     const carNumber=(document.getElementById('carNumber')?.value||'-').trim();
     const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
@@ -5614,7 +5614,7 @@ async function captureInspectionResult(mode='save'){
       const rows=lines.flatMap(row=>row.diagram?[{...row,height:Math.min(CONTENT*row.diagram.ratio,1120)+46,gap:0}]:wrapText(row.text).map((text,i)=>({...row,text,gap:row.sub&&i===0?14:0})));
       return {title,rows,summary:card.classList.contains('result-summary'),height:80+rows.reduce((h,row)=>h+(row.height||LINE)+row.gap,0)+30};
     });
-    if(!cards.length)throw new Error('감가리포트 영역을 찾지 못했습니다.');
+    if(!cards.length)throw new Error('검수리포트 영역을 찾지 못했습니다.');
 
     const diagramImages=new Map();
     for(const row of cards.flatMap(card=>card.rows)){
@@ -5624,7 +5624,7 @@ async function captureInspectionResult(mode='save'){
       diagramImages.set(row.diagram.src,image);
     }
     function drawDiagram(data,x,y){
-      const height=Math.min(CONTENT*data.ratio,1120),width=height/data.ratio;x+=(CONTENT-width)/2;ctx.fillStyle='#fff';ctx.fillRect(x,y,width,height);
+      const fullHeight=Math.min(CONTENT*data.ratio,1120),scale=data.kind==='paint'?.94:1,height=fullHeight*scale,width=height/data.ratio;x+=(CONTENT-width)/2;y+=fullHeight*(1-scale)/2;ctx.fillStyle='#fff';ctx.fillRect(x,y,width,height);
       ctx.drawImage(diagramImages.get(data.src),x,y,width,height);
       data.points.forEach(p=>{
         const px=x+width*p.left/100,py=y+height*p.top/100;
@@ -5658,7 +5658,7 @@ async function captureInspectionResult(mode='save'){
       ctx.fillStyle='#f4f6fa';ctx.fillRect(0,0,W,H);
       ctx.fillStyle='#101b30';ctx.fillRect(0,0,W,124);
       ctx.fillStyle='#fff';ctx.font='bold 40px sans-serif';ctx.fillText('딜러메이트 · 매입검차',PAD,61);
-      ctx.fillStyle='#a9bad5';ctx.font='24px sans-serif';ctx.fillText('감가리포트 · '+carNumber,PAD,100);
+      ctx.fillStyle='#a9bad5';ctx.font='24px sans-serif';ctx.fillText('검수리포트 · '+carNumber,PAD,100);
       ctx.textAlign='right';ctx.font='22px sans-serif';ctx.fillText(stamp,W-PAD,98);ctx.textAlign='left';
       let y=TOP;
       pages[pageIndex].forEach(card=>{
@@ -5675,15 +5675,15 @@ async function captureInspectionResult(mode='save'){
         });
         y+=card.height+26;
       });
-      ctx.fillStyle='#8593a8';ctx.font='23px sans-serif';ctx.fillText('DEALER MATE · 감가리포트',PAD,H-34);
+      ctx.fillStyle='#8593a8';ctx.font='23px sans-serif';ctx.fillText('DEALER MATE · 검수리포트',PAD,H-34);
       ctx.textAlign='right';ctx.fillText((pageIndex+1)+' / '+pages.length,W-PAD,H-34);ctx.textAlign='left';
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',1));
       if(!blob)throw new Error('이미지를 만들지 못했습니다.');
-      const name=`감가리포트_${safeCar}_${date}_${String(pageIndex+1).padStart(2,'0')}.png`;
+      const name=`검수리포트_${safeCar}_${date}_${String(pageIndex+1).padStart(2,'0')}.png`;
       if(mode==='collect')imageFiles.push({blob,name});else await saveBlobToDevice(blob,name);
     }
     if(mode==='collect')return imageFiles;
-  }catch(error){if(mode==='collect')throw error;console.error(error);alert('감가리포트 이미지 저장 중 오류가 발생했습니다.\n'+(error?.message||''))}
+  }catch(error){if(mode==='collect')throw error;console.error(error);alert('검수리포트 이미지 저장 중 오류가 발생했습니다.\n'+(error?.message||''))}
 }
 
 
@@ -5912,7 +5912,7 @@ window.addEventListener('pageshow',event=>{if(event.persisted){purchaseAllowLeav
 let purchaseShareLink='',purchaseImageFiles=null,purchaseShareBusy=false;
 function purchaseReportSnapshot(){
  updateAll();const area=document.getElementById('resultArea');
- if(!area||area.style.display==='none')throw new Error('공유할 감가리포트가 없습니다.');
+ if(!area||area.style.display==='none')throw new Error('공유할 검수리포트가 없습니다.');
  const sections=[...area.querySelectorAll('.result-meta > .result-card,.result-grid > .result-summary')].flatMap(card=>card.querySelector('.subgroup')?[...card.querySelectorAll('.subgroup')]:[card]).map(card=>({
  title:(card.querySelector('h3,.subgroup-title')?.textContent||'검차 내역').trim(),summary:card.classList.contains('result-summary'),
  rows:[...card.querySelectorAll('li,.result-empty,.result-notice,.kv,.sum-final,.deduction-diagram,.deduction-diagram-legend')].map(el=>el.classList.contains('deduction-diagram')?{diagram:deductionDiagramData(el.dataset.kind)}:{text:(el.innerText||el.textContent||'').trim(),strong:el.classList.contains('sum-final')||el.classList.contains('kv')}).filter(row=>row.diagram||row.text)
@@ -5945,7 +5945,7 @@ async function copyPurchaseShareLink(){
 }
 async function sendPurchaseShareLink(){
  if(!purchaseShareLink)return;
- const title='딜러메이트 · 감가리포트',text='차량 감가리포트를 확인해주세요.';
+ const title='딜러메이트 · 검수리포트',text='차량 검수리포트를 확인해주세요.';
  try{
   if(typeof window.AndroidReportShare?.shareText==='function'){window.AndroidReportShare.shareText(title,text+'\n'+purchaseShareLink);return}
   if(navigator.share){await navigator.share({title,text,url:purchaseShareLink});return}
@@ -5970,7 +5970,7 @@ async function sharePurchaseImages(){
   }
   const files=purchaseImageFiles.map(file=>new File([file.blob],file.name,{type:'image/png'}));
   if(!navigator.canShare({files})){status.textContent='이 브라우저는 이미지 파일 공유를 지원하지 않습니다. 링크 공유나 이미지 저장을 사용해주세요.';return}
-  await navigator.share({title:'딜러메이트 · 감가리포트',files});
+  await navigator.share({title:'딜러메이트 · 검수리포트',files});
  }catch(error){if(error.name!=='AbortError')status.textContent='이미지 공유를 열지 못했습니다. 이미지 저장 후 갤러리에서 공유해주세요.'}
  finally{button.disabled=false}
 }
@@ -5993,5 +5993,5 @@ startNewInspection=function(){requestPurchaseLeave(()=>{purchaseOriginalNew();pu
 <p id="detailAddError" role="alert"></p>
 <div class="detail-add-actions"><button type="button" onclick="document.getElementById('detailAddDialog').close()">취소</button><button type="submit">추가</button></div>
 </form></dialog>
-<dialog id="purchaseLeaveDialog" class="purchase-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="purchaseLeaveMessage"></p><div><button id="purchaseLeaveSave" type="button" onclick="decidePurchaseLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelPurchaseLeave()">계속 작성</button><button type="button" onclick="decidePurchaseLeave(false)">저장 없이 나가기</button></div></dialog><dialog id="purchaseShareDialog" class="purchase-share-dialog" aria-labelledby="purchaseShareTitle"><button class="purchase-share-close" type="button" onclick="document.getElementById('purchaseShareDialog').close()">닫기</button><h2 id="purchaseShareTitle">감가리포트 공유</h2><p id="purchaseShareStatus" role="status" aria-live="polite"></p><label for="purchaseShareLink">열람 링크</label><textarea id="purchaseShareLink" readonly></textarea><p class="purchase-share-note">링크에 생성 시점의 리포트 내용이 담깁니다. 수정 후 다시 만들면 새 링크가 생성되며, 자동 만료·회수 기능은 없습니다.</p><div class="purchase-share-actions"><button id="purchaseShareCopy" type="button" onclick="copyPurchaseShareLink()">링크 복사</button><button id="purchaseShareSend" type="button" onclick="sendPurchaseShareLink()">다른 앱으로 링크 공유</button><button id="purchaseShareImages" type="button" onclick="sharePurchaseImages()">페이지 이미지 준비</button></div></dialog></body>
+<dialog id="purchaseLeaveDialog" class="purchase-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="purchaseLeaveMessage"></p><div><button id="purchaseLeaveSave" type="button" onclick="decidePurchaseLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelPurchaseLeave()">계속 작성</button><button type="button" onclick="decidePurchaseLeave(false)">저장 없이 나가기</button></div></dialog><dialog id="purchaseShareDialog" class="purchase-share-dialog" aria-labelledby="purchaseShareTitle"><button class="purchase-share-close" type="button" onclick="document.getElementById('purchaseShareDialog').close()">닫기</button><h2 id="purchaseShareTitle">검수리포트 공유</h2><p id="purchaseShareStatus" role="status" aria-live="polite"></p><label for="purchaseShareLink">열람 링크</label><textarea id="purchaseShareLink" readonly></textarea><p class="purchase-share-note">링크에 생성 시점의 리포트 내용이 담깁니다. 수정 후 다시 만들면 새 링크가 생성되며, 자동 만료·회수 기능은 없습니다.</p><div class="purchase-share-actions"><button id="purchaseShareCopy" type="button" onclick="copyPurchaseShareLink()">링크 복사</button><button id="purchaseShareSend" type="button" onclick="sendPurchaseShareLink()">다른 앱으로 링크 공유</button><button id="purchaseShareImages" type="button" onclick="sharePurchaseImages()">페이지 이미지 준비</button></div></dialog></body>
 </html>
