@@ -5919,24 +5919,64 @@ function purchaseReportSnapshot(){
  }));
  return {version:1,created:new Date().toISOString(),carNumber:(document.getElementById('carNumber')?.value||'').trim(),bidPrice:(document.getElementById('bidPriceInput')?.value||'0'),sections};
 }
-async function encodePurchaseReport(snapshot){
- const raw=new TextEncoder().encode(JSON.stringify(snapshot));if(raw.length>200000)throw new Error('리포트 내용이 너무 큽니다. 이미지로 공유해주세요.');
- let bytes=raw,format='j';
- if(typeof CompressionStream==='function'){bytes=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());format='d'}
- let binary='';bytes.forEach(byte=>binary+=String.fromCharCode(byte));const token=format+'.'+btoa(binary).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
- const link=new URL('deduction-report.html',location.href);link.hash='r='+token;
- if(link.href.length>30000)throw new Error('링크가 너무 길어 이미지 공유가 필요합니다.');
- return link.href;
+
+function purchaseShortShareUrl(token){
+ if(typeof token!=='string'||!/^[0-9a-f]{32}$/.test(token))throw new Error('공유 링크 응답을 확인하지 못했습니다.');
+ const url=new URL('r.html',location.href);url.hash=token;return url.href;
+}
+let purchaseShareRecordId='',purchaseShareExpires='';
+function updatePurchaseShareControls(){
+ const ready=!!purchaseShareLink&&!purchaseShareBusy;
+ for(const id of ['purchaseShareCopy','purchaseShareSend','purchaseShareRevoke'])document.getElementById(id).disabled=!ready;
+ document.getElementById('purchaseShareCreate').disabled=purchaseShareBusy;
+}
+function showPurchaseServerShare(recordId,data){
+ purchaseShareRecordId=recordId;purchaseShareLink=purchaseShortShareUrl(data.token);purchaseShareExpires=data.expiresAt||'';
+ document.getElementById('purchaseShareLink').value=purchaseShareLink;
+ const date=new Date(purchaseShareExpires);document.getElementById('purchaseShareStatus').textContent='저장된 공유 리포트 · '+(Number.isFinite(date.getTime())?date.toLocaleString('ko-KR')+'까지 열람':'약 7일간 열람')+' · 변경한 내용은 새 링크를 만들어 반영해주세요.';
+}
+function purchaseShareError(error){
+ const missing=error?.code==='PGRST202'||/function.*(?:schema cache|does not exist)|Could not find.*function/i.test(error?.message||'');
+ document.getElementById('purchaseShareSetup').hidden=!missing;
+ document.getElementById('purchaseShareStatus').textContent=missing?'짧은 링크 기능의 최초 서버 설정이 필요합니다. 아래 설정 안내를 확인해주세요.':error?.message||'공유 링크를 만들지 못했습니다.';
+}
+async function publishPurchaseServerShare(){
+ if(!requireCloudUser())throw new Error('링크를 공유하려면 먼저 로그인해주세요.');
+ const snapshot=purchaseReportSnapshot();
+ const record=await saveInspectionRecord();if(!record)throw new Error('검차 저장을 완료한 후 다시 링크를 만들어주세요.');
+ const current=purchaseReportSnapshot();
+ if(purchaseIsDirty()||purchaseWorkspaceFingerprint({...snapshot,created:''})!==purchaseWorkspaceFingerprint({...current,created:''}))throw new Error('저장 중 검차내용이 변경되었습니다. 새 링크 만들기를 다시 눌러주세요.');
+ const {data,error}=await supabaseClient.rpc('publish_purchase_report',{p_record_id:String(record.id),p_snapshot:snapshot});
+ if(error)throw error;if(!data)throw new Error('공유 링크를 만들지 못했습니다.');
+ showPurchaseServerShare(String(record.id),data);
 }
 async function openPurchaseShare(){
- if(purchaseShareBusy)return;purchaseShareBusy=true;purchaseShareLink='';purchaseImageFiles=null;
+ if(purchaseShareBusy)return;purchaseShareBusy=true;purchaseShareLink='';purchaseShareRecordId='';purchaseShareExpires='';purchaseImageFiles=null;
  const dialog=document.getElementById('purchaseShareDialog'),status=document.getElementById('purchaseShareStatus');
- document.getElementById('purchaseShareLink').value='';document.getElementById('purchaseShareCopy').disabled=true;document.getElementById('purchaseShareSend').disabled=true;
+ document.getElementById('purchaseShareLink').value='';document.getElementById('purchaseShareSetup').hidden=true;
  const images=document.getElementById('purchaseShareImages');images.textContent='페이지 이미지 준비';images.disabled=false;
- if(!dialog.open)dialog.showModal();status.textContent='리포트 링크를 만드는 중…';
- try{purchaseShareLink=await encodePurchaseReport(purchaseReportSnapshot());document.getElementById('purchaseShareLink').value=purchaseShareLink;document.getElementById('purchaseShareCopy').disabled=false;document.getElementById('purchaseShareSend').disabled=false;status.textContent='현재 리포트의 링크가 준비됐습니다.'}
- catch(error){status.textContent=error.message||'링크를 만들지 못했습니다.'}
- finally{purchaseShareBusy=false}
+ if(!dialog.open)dialog.showModal();status.textContent='공유 링크를 확인하는 중…';updatePurchaseShareControls();
+ try{
+  if(!requireCloudUser())throw new Error('링크를 공유하려면 먼저 로그인해주세요.');
+  const id=localStorage.getItem('activeInspectionRecordId');
+  if(id){const {data,error}=await supabaseClient.rpc('get_purchase_report_share',{p_record_id:id});if(error)throw error;if(data){showPurchaseServerShare(id,data);return}}
+  await publishPurchaseServerShare();
+ }catch(error){purchaseShareError(error)}
+ finally{purchaseShareBusy=false;updatePurchaseShareControls()}
+}
+async function createPurchaseShare(){
+ if(purchaseShareBusy)return;purchaseShareBusy=true;document.getElementById('purchaseShareSetup').hidden=true;updatePurchaseShareControls();document.getElementById('purchaseShareStatus').textContent='검차 저장 후 새 링크를 만드는 중…';
+ try{await publishPurchaseServerShare()}catch(error){purchaseShareError(error)}
+ finally{purchaseShareBusy=false;updatePurchaseShareControls()}
+}
+async function revokePurchaseShare(){
+ if(purchaseShareBusy||!purchaseShareRecordId||!requireCloudUser())return;
+ purchaseShareBusy=true;updatePurchaseShareControls();
+ try{
+  const {data,error}=await supabaseClient.rpc('revoke_purchase_report',{p_record_id:purchaseShareRecordId});if(error)throw error;if(!data)throw new Error('공유 해제 상태를 확인하지 못했습니다.');
+  purchaseShareLink='';purchaseShareRecordId='';purchaseShareExpires='';document.getElementById('purchaseShareLink').value='';document.getElementById('purchaseShareStatus').textContent='공유를 해제했습니다. 이전 링크는 더 이상 열리지 않습니다.';
+ }catch(error){purchaseShareError(error)}
+ finally{purchaseShareBusy=false;updatePurchaseShareControls()}
 }
 async function copyPurchaseShareLink(){
  if(!purchaseShareLink)return;
@@ -5993,5 +6033,5 @@ startNewInspection=function(){requestPurchaseLeave(()=>{purchaseOriginalNew();pu
 <p id="detailAddError" role="alert"></p>
 <div class="detail-add-actions"><button type="button" onclick="document.getElementById('detailAddDialog').close()">취소</button><button type="submit">추가</button></div>
 </form></dialog>
-<dialog id="purchaseLeaveDialog" class="purchase-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="purchaseLeaveMessage"></p><div><button id="purchaseLeaveSave" type="button" onclick="decidePurchaseLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelPurchaseLeave()">계속 작성</button><button type="button" onclick="decidePurchaseLeave(false)">저장 없이 나가기</button></div></dialog><dialog id="purchaseShareDialog" class="purchase-share-dialog" aria-labelledby="purchaseShareTitle"><button class="purchase-share-close" type="button" onclick="document.getElementById('purchaseShareDialog').close()">닫기</button><h2 id="purchaseShareTitle">검수리포트 공유</h2><p id="purchaseShareStatus" role="status" aria-live="polite"></p><label for="purchaseShareLink">열람 링크</label><textarea id="purchaseShareLink" readonly></textarea><p class="purchase-share-note">링크에 생성 시점의 리포트 내용이 담깁니다. 수정 후 다시 만들면 새 링크가 생성되며, 자동 만료·회수 기능은 없습니다.</p><div class="purchase-share-actions"><button id="purchaseShareCopy" type="button" onclick="copyPurchaseShareLink()">링크 복사</button><button id="purchaseShareSend" type="button" onclick="sendPurchaseShareLink()">다른 앱으로 링크 공유</button><button id="purchaseShareImages" type="button" onclick="sharePurchaseImages()">페이지 이미지 준비</button></div></dialog></body>
+<dialog id="purchaseLeaveDialog" class="purchase-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="purchaseLeaveMessage"></p><div><button id="purchaseLeaveSave" type="button" onclick="decidePurchaseLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelPurchaseLeave()">계속 작성</button><button type="button" onclick="decidePurchaseLeave(false)">저장 없이 나가기</button></div></dialog><dialog id="purchaseShareDialog" class="purchase-share-dialog" aria-labelledby="purchaseShareTitle"><button class="purchase-share-close" type="button" onclick="document.getElementById('purchaseShareDialog').close()">닫기</button><h2 id="purchaseShareTitle">검수리포트 공유</h2><p id="purchaseShareStatus" role="status" aria-live="polite"></p><label for="purchaseShareLink">열람 링크</label><textarea id="purchaseShareLink" readonly></textarea><p class="purchase-share-note">서버에 저장한 리포트를 약 7일간 열람할 수 있습니다. 새 링크를 만들면 같은 차량의 이전 링크는 종료되며, 공유 해제로 즉시 닫을 수 있습니다.</p><div class="purchase-share-actions"><button id="purchaseShareCreate" type="button" onclick="createPurchaseShare()">새 링크 만들기</button><button id="purchaseShareRevoke" type="button" onclick="revokePurchaseShare()" disabled>공유 해제</button><button id="purchaseShareCopy" type="button" onclick="copyPurchaseShareLink()">링크 복사</button><button id="purchaseShareSend" type="button" onclick="sendPurchaseShareLink()">다른 앱으로 링크 공유</button><button id="purchaseShareImages" type="button" onclick="sharePurchaseImages()">페이지 이미지 준비</button></div><details id="purchaseShareSetup" hidden><summary>최초 공유 설정 안내</summary><p>Supabase SQL Editor에서 <a href="https://github.com/Dealermate/dealermate.github.io/blob/main/purchase_report_sharing.sql" target="_blank" rel="noopener noreferrer">매입검차 공유 설정 SQL</a>을 한 번 실행해주세요.</p></details></dialog></body>
 </html>
