@@ -4310,10 +4310,10 @@ function deductionDiagramHtml(kind){
         const price = getNumericValue(priceInput?.value || '');
         const desc  = (descInput?.value || '').trim();
 
-        if(checkbox.checked){
-          if(price>0)functionDiscount += price;
+        if(checkbox.checked && price > 0){
+          functionDiscount += price;
           const descText = desc ? ` / ${desc}` : '';
-          detailLines.push({text:`[세부상태] ${name}${descText}: ${price>0?'-'+price.toLocaleString()+'원':'감가 금액 미입력'}`,partKey:'detail:'+checkbox.dataset.name});
+          detailLines.push({text:`[세부상태] ${name}${descText}: -${price.toLocaleString()}원`,partKey:'detail:'+checkbox.dataset.name});
         }
       });
 
