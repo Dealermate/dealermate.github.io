@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="1000" viewBox="0 0 1200 1000" role="img" aria-labelledby="title desc">
+<title id="title">딜러메이트 차량 외관 선 도면</title><desc id="desc">흰 바탕에 차체 윤곽과 외판 경계만 선으로 표시한 차량 외관 전개도. 왼쪽 측면, 중앙 상부, 오른쪽 측면 순서이며 차량 앞쪽이 위입니다.</desc>
+<defs>
+ <g id="wheel" fill="white" stroke="#667079" stroke-linejoin="round"><circle r="65" stroke-width="1.1" /><circle r="57" fill="none" stroke-width="1.1" /><circle r="43" stroke-width="1.1" /><path d="M0-42V-10M40-13L10-3M25 34L6 8M-25 34L-6 8M-40-13L-10-3" fill="none" stroke-width="1.1" /><circle r="10" stroke-width="1.1" /></g><g id="side" stroke="#667079" stroke-width="1.7" stroke-linejoin="round">
+  <path d="M126 77H185Q250 77 281 174L309 318Q370 370 378 435V632Q375 722 316 792L287 916Q280 949 240 951H126V814A74 74 0 0 0 126 666V334A74 74 0 0 0 126 186Z" fill="#ffffff" />
+  <path d="M132 87H183Q241 87 270 175L297 316H157A76 76 0 0 0 132 188Z" fill="#ffffff" />
+  <path d="M139 345H275V514H139Z" fill="#ffffff" />
+  <path d="M139 526H275V711L246 743H167Q167 694 139 676Z" fill="#ffffff" />
+  <path d="M139 816Q171 800 174 764H249L303 800L276 914Q271 939 239 939H139Z" fill="#ffffff" />
+  <path d="M286 342Q348 383 363 437V514H286Z" fill="#ffffff" stroke="#667079" />
+  <path d="M286 526H363V630Q361 691 309 754L286 728Z" fill="#ffffff" stroke="#667079" />
+  <path d="M113 347V654" stroke="#667079" stroke-width="1.7" />
+  <path d="M132 345V653" stroke="#667079" stroke-width="1.7" />
+  <path d="M279 340V738" stroke="#667079" stroke-width="1.7" />
+  <rect x="224" y="368" width="29" height="8" rx="4" fill="#ffffff" stroke="#667079" stroke-width="1.2" /><rect x="224" y="552" width="29" height="8" rx="4" fill="#ffffff" stroke="#667079" stroke-width="1.2" />
+  <path d="M135 96H171Q201 101 216 131H135Z" fill="#ffffff" stroke="#667079" />
+  <path d="M141 913H187L177 933H141Z" fill="#ffffff" stroke="#667079" />
+  <path d="M168 151L251 160M173 870L279 857" fill="none" stroke="#667079" />
+  <use xlink:href="#wheel" transform="translate(96 260)" stroke="#667079" /><use xlink:href="#wheel" transform="translate(96 740)" stroke="#667079" />
+ </g>
+</defs>
+<rect width="1200" height="1000" fill="#ffffff" />
+<path d="M400 18V982M800 18V982" stroke="#edf0f2" stroke-width="1" stroke-dasharray="4 9" />
+
+<use xlink:href="#side" /><use xlink:href="#side" transform="translate(1200 0) scale(-1 1)" />
+
+<g stroke="#667079" stroke-width="1.7" stroke-linejoin="round">
+ <path d="M497 61Q600 33 703 61Q740 74 750 122L765 298V703L751 899Q746 947 704 968Q600 990 496 968Q454 947 449 899L435 703V298L450 122Q460 74 497 61Z" fill="#ffffff" />
+ <path d="M494 68Q600 44 706 68L733 112Q600 133 467 112Z" fill="#ffffff" />
+ <path d="M474 137Q600 119 726 137L742 296L714 334Q600 307 486 334L458 296Z" fill="#ffffff" />
+ <path d="M489 341Q600 315 711 341L726 439Q600 461 474 439Z" fill="#ffffff" stroke="#667079" />
+ <path d="M485 467Q600 445 715 467L720 681Q600 706 480 681Z" fill="#ffffff" />
+ <path d="M481 711Q600 733 719 711L709 790Q600 814 491 790Z" fill="#ffffff" stroke="#667079" />
+ <path d="M487 817Q600 840 713 817L733 917Q600 939 467 917Z" fill="#ffffff" />
+ <path d="M473 940Q600 959 727 940L704 962Q600 980 496 962Z" fill="#ffffff" />
+ <path d="M451 349L464 435L462 682L449 720L445 440Z" fill="#ffffff" stroke="#667079" />
+ <path d="M749 349L736 435L738 682L751 720L755 440Z" fill="#ffffff" stroke="#667079" />
+ <path d="M439 329Q408 326 411 349Q413 371 438 371L451 365L448 338Z" fill="#ffffff" />
+ <path d="M761 329Q792 326 789 349Q787 371 762 371L749 365L752 338Z" fill="#ffffff" />
+ <path d="M464 109Q494 112 525 120L518 136L459 133Z" fill="#ffffff" stroke="#667079" />
+ <path d="M736 109Q706 112 675 120L682 136L741 133Z" fill="#ffffff" stroke="#667079" />
+ <path d="M462 915L516 924L510 937L466 934Z" fill="#ffffff" stroke="#667079" />
+ <path d="M738 915L684 924L690 937L734 934Z" fill="#ffffff" stroke="#667079" />
+ <path d="M487 157L478 282M713 157L722 282M498 483V663M702 483V663" stroke="#667079" fill="none" />
+</g>
+
+<g fill="#657078" font-family="Arial,'Noto Sans KR',sans-serif" font-size="18" font-weight="500" text-anchor="middle">
+ <text x="600" y="42" fill="#657078" font-weight="500">앞범퍼</text><text x="600" y="186" fill="#657078" font-weight="500">후드</text><text x="600" y="355" fill="#657078" font-weight="500">앞유리</text><text x="600" y="535" fill="#657078" font-weight="500">루프</text><text x="600" y="750" fill="#657078" font-weight="500">뒷유리</text><text x="600" y="825" fill="#657078" font-weight="500">트렁크</text><text x="600" y="993" fill="#657078" font-weight="500">뒷범퍼</text>
+ <text x="432" y="308" fill="#657078" font-weight="500">미러</text><text x="768" y="308" fill="#657078" font-weight="500">미러</text>
+ <text x="240" y="210" fill="#657078" font-weight="500">앞휀다</text><text x="216" y="419" fill="#657078" font-weight="500">앞문</text><text x="216" y="579" fill="#657078" font-weight="500">뒷문</text><text x="252" y="807" fill="#657078" font-weight="500">뒤휀다</text><text x="108" y="503" fill="#657078" font-weight="500">사이드실</text><text x="348" y="519" fill="#657078" font-weight="500">필러</text>
+ <text x="960" y="210" fill="#657078" font-weight="500">앞휀다</text><text x="984" y="419" fill="#657078" font-weight="500">앞문</text><text x="984" y="579" fill="#657078" font-weight="500">뒷문</text><text x="948" y="807" fill="#657078" font-weight="500">뒤휀다</text><text x="1092" y="503" fill="#657078" font-weight="500">사이드실</text><text x="852" y="519" fill="#657078" font-weight="500">필러</text>
+</g>
+<g fill="#657078" font-family="Arial,'Noto Sans KR',sans-serif" font-size="16" font-weight="500" text-anchor="middle">
+ <text x="96" y="176" fill="#657078" font-weight="500">휠</text><text x="96" y="349" fill="#657078" font-weight="500">타이어</text><text x="96" y="656" fill="#657078" font-weight="500">휠</text><text x="96" y="830" fill="#657078" font-weight="500">타이어</text>
+ <text x="1104" y="176" fill="#657078" font-weight="500">휠</text><text x="1104" y="349" fill="#657078" font-weight="500">타이어</text><text x="1104" y="656" fill="#657078" font-weight="500">휠</text><text x="1104" y="830" fill="#657078" font-weight="500">타이어</text>
+</g>
+</svg>

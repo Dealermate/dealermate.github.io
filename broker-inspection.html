@@ -2741,6 +2741,11 @@ body.dealer-report-page{background:#f2f5f6}
 .buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin.pending,.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin.measured{background:#f9fbfce0;color:#627c8c;border-color:#adbdc8}
 .buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin[aria-pressed="true"]{outline:2px solid #5c879f;outline-offset:3px;box-shadow:0 3px 11px #24475d26}
 @media(prefers-reduced-motion:reduce){.buyer-report.dealer-report .report-exterior-pin{transition:none}}
+
+/* Monochrome exterior line drawing; color is reserved for inspection status. */
+.buyer-report.dealer-report .report-exterior-map-viewport{background:#fff;border-color:#edf0f2;box-shadow:none}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin{box-shadow:none;font-weight:650}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin[aria-pressed="true"]{box-shadow:none;outline-width:1.5px}
 </style>
 </head>
 <body>
@@ -5889,7 +5894,7 @@ captureInspectionResult=async function(){
   if(vehiclePhotos.length){page();title('03 차량사진');for(let i=0;i<vehiclePhotos.length;i++){const photo=vehiclePhotos[i];let src=photo.dataUrl;if(!src){const blob=await fetchPhotoBlobFromUrl(photo.url||await createPhotoSignedUrl(photo.path));src=await blobToDataUrl(blob)}const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error((i+1)+'번 사진을 불러오지 못했습니다.'));im.src=src});if(y+525>H-100){page();title('03 차량사진 · 계속')}text((i+1)+'. '+brokerPartName(photo.partKey),'#295fe8',true);const scale=Math.min((W-P*2)/img.width,430/img.height),width=img.width*scale,height=img.height*scale;ctx.fillStyle='#fff';ctx.fillRect(P,y-12,W-P*2,445);ctx.drawImage(img,(W-width)/2,y,width,height);y+=475}}else{title('03 차량사진');text('등록된 차량사진이 없습니다.');}
 
   page();title('04 외관 상태');
-  const exteriorBlob=await fetchPhotoBlobFromUrl(new URL('assets/vehicle-exterior-premium.svg',location.href).href),exteriorSrc=await blobToDataUrl(exteriorBlob);
+  const exteriorBlob=await fetchPhotoBlobFromUrl(new URL('assets/vehicle-exterior-line.svg',location.href).href),exteriorSrc=await blobToDataUrl(exteriorBlob);
   const exteriorImage=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('외관 전개도를 불러오지 못했습니다.'));img.src=exteriorSrc});
   const exWidth=W-P*2,exHeight=exWidth*exteriorImage.height/exteriorImage.width,exY=y;
   ctx.drawImage(exteriorImage,P,exY,exWidth,exHeight);
@@ -6146,7 +6151,7 @@ function mountVehicleExteriorMap(container,items,photos,options){
  const zoom=document.createElement('button');zoom.type='button';zoom.textContent='도면 확대';zoom.setAttribute('aria-pressed','false');toolbar.append(hint);
  const viewport=document.createElement('div');viewport.className='report-exterior-map-viewport';viewport.tabIndex=0;viewport.setAttribute('aria-label','외관 상태 전개도');
  const plane=document.createElement('div');plane.className='report-exterior-map-plane';
- const image=document.createElement('img');image.src='assets/vehicle-exterior-premium.svg';image.alt='차량 외관 전체 전개도';plane.append(image);viewport.append(plane);
+ const image=document.createElement('img');image.src='assets/vehicle-exterior-line.svg';image.alt='차량 외관 전체 전개도';image.width=1200;image.height=1000;plane.append(image);viewport.append(plane);
  const panel=document.createElement('div');panel.className='report-exterior-selected';panel.setAttribute('aria-live','polite');
  const popup=document.createElement('dialog');popup.className='report-exterior-popup';popup.setAttribute('aria-label','외관 부위 상세');
  const close=document.createElement('button');close.type='button';close.className='report-exterior-popup-close';close.textContent='닫기';close.onclick=()=>popup.close();popup.append(close,panel);
@@ -6231,6 +6236,7 @@ function mountDealerReportCover(root,fields,photos,options){
 <dialog id="brokerLeaveDialog" class="broker-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="brokerLeaveMessage"></p><div><button id="brokerLeaveSave" type="button" onclick="decideBrokerLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelBrokerLeave()">계속 작성</button><button type="button" onclick="decideBrokerLeave(false)">저장 없이 나가기</button></div></dialog>
 </body>
 </html>
+
 
 
 
