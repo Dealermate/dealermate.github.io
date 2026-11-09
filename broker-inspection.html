@@ -2732,6 +2732,15 @@ body.dealer-report-page{background:#f2f5f6}
 @media(max-width:520px){main.buyer-report.dealer-report{margin:12px auto;padding:0 12px}.dealer-brandbar{padding:2px 2px 14px}.dealer-brand-name>img{width:37px;height:37px}.dealer-brand-name strong{font-size:12px}.dealer-brand-name span{font-size:8px}.dealer-report-type{font-size:10px;padding-left:10px}.dealer-cover-card{border-radius:17px}.dealer-cover-identity{padding:21px 20px}.dealer-report .premium-cover h2{font-size:25px!important}.dealer-report .premium-price strong{font-size:29px!important}.dealer-key-facts{gap:8px}.dealer-key-facts>div+div{padding-left:10px}.dealer-key-facts dd{font-size:12px}.dealer-report .report-chapter-nav{top:0;padding:13px 14px;margin-top:12px;border-radius:12px}.buyer-report.dealer-report .buyer-report-section{padding:19px!important;margin:12px 0!important;border-radius:14px!important}.buyer-report.dealer-report .buyer-report-section h3{font-size:16px!important;margin-bottom:14px!important;padding-bottom:14px}.dealer-report .buyer-report-grid{gap:0 20px!important}.buyer-report.dealer-report .buyer-report-grid>div{font-size:13px;padding:12px 0!important}.dealer-report .buyer-status-grid{grid-template-columns:1fr}.dealer-report .premium-summary-copy{padding:17px;font-size:14px}.dealer-report .buyer-report-photos{gap:9px!important}.dealer-report .buyer-report-photos figcaption{font-size:10px!important;padding:9px!important}.dealer-report .report-chapter-pager{padding:12px 14px}.dealer-report .report-exterior-toolbar>span{font-size:10px}.dealer-report .report-exterior-map-viewport{width:min(100%,290px,29dvh)}.dealer-cover-meta{font-size:9px}.dealer-share-meta{font-size:9px!important}}
 @media print{body.dealer-report-page{background:white}.buyer-report.dealer-report,main.buyer-report.dealer-report{background:white!important;padding:0;margin:0;max-width:none}.buyer-report.dealer-report .buyer-report-header{display:block!important;background:white!important;break-inside:avoid}.dealer-cover-card{grid-template-columns:1fr 1fr;border:1px solid #ddd}.dealer-gallery-stage{max-height:290px}.dealer-gallery-expand>img{object-fit:contain}.dealer-gallery-controls,.dealer-gallery-thumbs,.dealer-gallery-open-all{display:none!important}.dealer-cover-meta{margin-top:8px}.buyer-report.dealer-report .premium-cover h2,.buyer-report.dealer-report .premium-price strong{color:#183047!important}.dealer-report .report-exterior-map-viewport{width:100%;max-height:none;overflow:visible}.dealer-report .report-exterior-map-plane{width:100%;transform:none!important}.buyer-report.dealer-report .buyer-report-section{break-before:page}.dealer-report .report-chapter-nav,.dealer-report .report-chapter-pager{display:none!important}}
 
+
+/* Vector exterior diagram: report-only styling; inspection input coordinates stay unchanged. */
+.buyer-report.dealer-report .report-exterior-map-viewport{border:1px solid #e6edf1;background:#fbfcfd;box-shadow:inset 0 1px 6px #1c384406;border-radius:14px}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin{width:26px;height:26px;font-size:9px;font-weight:750;border-width:1px;box-shadow:0 2px 7px #193e511c;transition:box-shadow .15s,outline-color .15s}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin.normal{background:#f0fcf5df;color:#18734e;border-color:#7ab398}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin.issue{background:#fff0f0e6;color:#b8373e;border-color:#d88f95}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin.pending,.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin.measured{background:#f9fbfce0;color:#627c8c;border-color:#adbdc8}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin[aria-pressed="true"]{outline:2px solid #5c879f;outline-offset:3px;box-shadow:0 3px 11px #24475d26}
+@media(prefers-reduced-motion:reduce){.buyer-report.dealer-report .report-exterior-pin{transition:none}}
 </style>
 </head>
 <body>
@@ -5880,7 +5889,7 @@ captureInspectionResult=async function(){
   if(vehiclePhotos.length){page();title('03 차량사진');for(let i=0;i<vehiclePhotos.length;i++){const photo=vehiclePhotos[i];let src=photo.dataUrl;if(!src){const blob=await fetchPhotoBlobFromUrl(photo.url||await createPhotoSignedUrl(photo.path));src=await blobToDataUrl(blob)}const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error((i+1)+'번 사진을 불러오지 못했습니다.'));im.src=src});if(y+525>H-100){page();title('03 차량사진 · 계속')}text((i+1)+'. '+brokerPartName(photo.partKey),'#295fe8',true);const scale=Math.min((W-P*2)/img.width,430/img.height),width=img.width*scale,height=img.height*scale;ctx.fillStyle='#fff';ctx.fillRect(P,y-12,W-P*2,445);ctx.drawImage(img,(W-width)/2,y,width,height);y+=475}}else{title('03 차량사진');text('등록된 차량사진이 없습니다.');}
 
   page();title('04 외관 상태');
-  const exteriorBlob=await fetchPhotoBlobFromUrl('https://i.imgur.com/1OGXwOu.png'),exteriorSrc=await blobToDataUrl(exteriorBlob);
+  const exteriorBlob=await fetchPhotoBlobFromUrl(new URL('assets/vehicle-exterior-premium.svg',location.href).href),exteriorSrc=await blobToDataUrl(exteriorBlob);
   const exteriorImage=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('외관 전개도를 불러오지 못했습니다.'));img.src=exteriorSrc});
   const exWidth=W-P*2,exHeight=exWidth*exteriorImage.height/exteriorImage.width,exY=y;
   ctx.drawImage(exteriorImage,P,exY,exWidth,exHeight);
@@ -6120,7 +6129,7 @@ function mountVehicleReportIssueFilter(root,key){
  reset.onclick=()=>apply(false);apply(vehicleReportIssueFilters.get(key)||false);
 }
 
-const VEHICLE_EXTERIOR_POSITIONS=Object.fromEntries(DATA.partNames.map(p=>[p.key,{top:p.top,left:p.left}]));
+const VEHICLE_EXTERIOR_POSITIONS={"front_bumper":{"top":"8.5%","left":"50%"},"hood":{"top":"23%","left":"50%"},"front_glass":{"top":"40%","left":"50%"},"f_fender_l":{"top":"25%","left":"20%"},"f_fender_r":{"top":"25%","left":"80%"},"mirror_l":{"top":"35%","left":"36%"},"mirror_r":{"top":"35%","left":"64%"},"f_door_l":{"top":"46%","left":"18%"},"f_door_r":{"top":"46%","left":"82%"},"r_door_l":{"top":"62%","left":"18%"},"r_door_r":{"top":"62%","left":"82%"},"r_fender_l":{"top":"84%","left":"21%"},"r_fender_r":{"top":"84%","left":"79%"},"roof":{"top":"58%","left":"50%"},"rear_glass":{"top":"78%","left":"50%"},"trunk":{"top":"87%","left":"50%"},"rear_bumper":{"top":"95%","left":"50%"},"side_sill_l":{"top":"55%","left":"9%"},"side_sill_r":{"top":"55%","left":"91%"},"pillar_l":{"top":"56%","left":"29%"},"pillar_r":{"top":"56%","left":"71%"},"wheel_fl":{"top":"22%","left":"8%"},"wheel_fr":{"top":"22%","left":"92%"},"wheel_rl":{"top":"71%","left":"8%"},"wheel_rr":{"top":"71%","left":"92%"},"tire_fl":{"top":"30%","left":"8%"},"tire_fr":{"top":"30%","left":"92%"},"tire_rl":{"top":"79%","left":"8%"},"tire_rr":{"top":"79%","left":"92%"}};
 const vehicleExteriorSelections=new Map();
 function vehicleExteriorPinStatus(item){
  if(item.state==='pending'||!item.state)return {label:'미확인',kind:'pending'};
@@ -6137,7 +6146,7 @@ function mountVehicleExteriorMap(container,items,photos,options){
  const zoom=document.createElement('button');zoom.type='button';zoom.textContent='도면 확대';zoom.setAttribute('aria-pressed','false');toolbar.append(hint);
  const viewport=document.createElement('div');viewport.className='report-exterior-map-viewport';viewport.tabIndex=0;viewport.setAttribute('aria-label','외관 상태 전개도');
  const plane=document.createElement('div');plane.className='report-exterior-map-plane';
- const image=document.createElement('img');image.src='https://i.imgur.com/1OGXwOu.png';image.alt='차량 외관 전체 전개도';plane.append(image);viewport.append(plane);
+ const image=document.createElement('img');image.src='assets/vehicle-exterior-premium.svg';image.alt='차량 외관 전체 전개도';plane.append(image);viewport.append(plane);
  const panel=document.createElement('div');panel.className='report-exterior-selected';panel.setAttribute('aria-live','polite');
  const popup=document.createElement('dialog');popup.className='report-exterior-popup';popup.setAttribute('aria-label','외관 부위 상세');
  const close=document.createElement('button');close.type='button';close.className='report-exterior-popup-close';close.textContent='닫기';close.onclick=()=>popup.close();popup.append(close,panel);
@@ -6150,9 +6159,9 @@ function mountVehicleExteriorMap(container,items,photos,options){
  viewport.addEventListener('touchend',event=>{if(!touch)return;const point=event.changedTouches[0],dx=point.clientX-touch.x,dy=point.clientY-touch.y;touch=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5)showRegion(region+(dx<0?1:-1))},{passive:true});
  const buttons=new Map();
  list.forEach(item=>{
-  const fallback=VEHICLE_EXTERIOR_POSITIONS[item.key],top=parseFloat(item.top??fallback?.top),left=parseFloat(item.left??fallback?.left);
+  const fallback=VEHICLE_EXTERIOR_POSITIONS[item.key],top=parseFloat(fallback?.top??item.top),left=parseFloat(fallback?.left??item.left);
   if(!Number.isFinite(top)||!Number.isFinite(left)||top<0||top>100||left<0||left>100)return;
-  const status=vehicleExteriorPinStatus(item),button=document.createElement('button');button.type='button';button.className='report-exterior-pin '+status.kind;button.style.top=top+'%';button.style.left=left+'%';button.textContent=status.label;button.title=item.title+' · '+(item.stateLabel||status.label);button.setAttribute('aria-label',button.title+' · 사진 및 메모 보기');button.setAttribute('aria-pressed','false');button.onclick=()=>select(item.key,true);buttons.set(item.key,button);plane.append(button);
+  const status=vehicleExteriorPinStatus(item),button=document.createElement('button');button.type='button';button.className='report-exterior-pin '+status.kind;button.style.top=top+'%';button.style.left=left+'%';button.textContent=status.label;button.dataset.partKey=item.key;button.title=item.title+' · '+(item.stateLabel||status.label);button.setAttribute('aria-label',button.title+' · 사진 및 메모 보기');button.setAttribute('aria-pressed','false');button.onclick=()=>select(item.key,true);buttons.set(item.key,button);plane.append(button);
  });
  function select(key,scroll=false){
   const item=list.find(row=>row.key===key);if(!item)return;
@@ -6222,6 +6231,7 @@ function mountDealerReportCover(root,fields,photos,options){
 <dialog id="brokerLeaveDialog" class="broker-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="brokerLeaveMessage"></p><div><button id="brokerLeaveSave" type="button" onclick="decideBrokerLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelBrokerLeave()">계속 작성</button><button type="button" onclick="decideBrokerLeave(false)">저장 없이 나가기</button></div></dialog>
 </body>
 </html>
+
 
 
 
