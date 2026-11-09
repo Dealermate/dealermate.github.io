@@ -89,6 +89,10 @@ body.dealer-report-page{background:#f2f5f6}
 
 .buyer-report.dealer-report .report-exterior-map-viewport[data-region="1"]{clip-path:inset(0 4px round 10px)}
 @media print{.buyer-report.dealer-report .report-exterior-map-viewport{clip-path:none!important}}
+
+/* Windshield names scale in the original artwork coordinate system. */
+.report-exterior-annotations{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none;overflow:visible}
+.buyer-report.dealer-report .report-exterior-map-viewport .report-exterior-pin{width:clamp(24px,3.5dvh,28px);height:clamp(24px,3.5dvh,28px);font-size:clamp(9px,1.3125dvh,10.5px)}
 </style></head><body class="dealer-report-page"><main class="buyer-report"><header class="head buyer-report-header"><div class="brand"><img src="assets/dealer-mate-logo.webp" alt="">DEALER MATE · BUYER REPORT</div><div class="premium-cover"><div><h2 id="vehicleTitle">차량리포트</h2><p id="premiumVehicleSub">차량 상태와 확인 사진</p></div><div class="premium-price"><small>판매가</small><strong id="premiumSalePrice">미입력</strong></div></div><div id="reportMeta" class="meta"></div></header><div id="reportStatus" class="message" role="status">리포트를 불러오는 중입니다.</div><div id="reportActions" class="actions" hidden><button type="button" onclick="window.print()">인쇄 / PDF</button></div><div id="reportContent" class="content" hidden></div><footer class="foot">검차 시점에 확인한 내용을 기록한 리포트입니다. 미확인·확인불가 항목은 추가 확인이 필요합니다.</footer></main><dialog id="photoViewer" class="photo-fullscreen"><header><span id="expandedPhotoTitle">확인 사진</span><div><button type="button" onclick="document.getElementById('photoViewer').classList.toggle('zoomed')">확대 / 맞춤</button><button type="button" onclick="document.getElementById('photoViewer').close()">닫기</button></div></header><div class="photo-surface"><img id="expandedPhoto" alt="확인 사진" onclick="document.getElementById('photoViewer').classList.toggle('zoomed')"></div></dialog><script>
 const REPORT_API='https://crmeeegayzezeqhgkagx.supabase.co';
 const REPORT_KEY='sb_publishable_6wpAz2ELkD2Eh2ircwzVGw_78QKns9C';
@@ -204,7 +208,23 @@ function mountVehicleReportIssueFilter(root,key){
  reset.onclick=()=>apply(false);apply(vehicleReportIssueFilters.get(key)||false);
 }
 
-const VEHICLE_EXTERIOR_POSITIONS={"front_bumper":{"top":"10%","left":"56%"},"hood":{"top":"28%","left":"49.3%"},"front_glass":{"top":"40%","left":"49.3%"},"f_fender_l":{"top":"28.5%","left":"18.5%"},"f_fender_r":{"top":"28.5%","left":"81%"},"mirror_l":{"top":"36%","left":"41%"},"mirror_r":{"top":"36%","left":"57%"},"f_door_l":{"top":"50%","left":"16.2%"},"f_door_r":{"top":"50%","left":"82.5%"},"r_door_l":{"top":"67.5%","left":"16.2%"},"r_door_r":{"top":"67.5%","left":"82.5%"},"r_fender_l":{"top":"90%","left":"17%"},"r_fender_r":{"top":"90%","left":"82%"},"roof":{"top":"64%","left":"49.3%"},"rear_glass":{"top":"78%","left":"49.3%"},"trunk":{"top":"91%","left":"49.3%"},"rear_bumper":{"top":"95%","left":"56%"},"side_sill_l":{"top":"55%","left":"5.8%"},"side_sill_r":{"top":"55%","left":"94%"},"pillar_l":{"top":"60%","left":"28.3%"},"pillar_r":{"top":"60%","left":"71%"},"wheel_fl":{"top":"26.3%","left":"8.5%"},"wheel_fr":{"top":"26.3%","left":"90%"},"wheel_rl":{"top":"76%","left":"8.5%"},"wheel_rr":{"top":"76%","left":"90%"},"tire_fl":{"top":"34%","left":"8.5%"},"tire_fr":{"top":"34%","left":"90%"},"tire_rl":{"top":"84.6%","left":"8.5%"},"tire_rr":{"top":"84.6%","left":"90%"}};
+const VEHICLE_EXTERIOR_POSITIONS={"front_bumper":{"top":"10.0%","left":"55.9211%"},"hood":{"top":"21.9298%","left":"55.0%"},"front_glass":{"top":"42.9825%","left":"49.2105%"},"f_fender_l":{"top":"28.5965%","left":"18.5526%"},"f_fender_r":{"top":"28.5965%","left":"81.0526%"},"mirror_l":{"top":"35.9649%","left":"41.5789%"},"mirror_r":{"top":"35.9649%","left":"57.1053%"},"f_door_l":{"top":"50.1754%","left":"14.7368%"},"f_door_r":{"top":"50.1754%","left":"83.8158%"},"r_door_l":{"top":"67.0175%","left":"16.9737%"},"r_door_r":{"top":"67.0175%","left":"82.1053%"},"r_fender_l":{"top":"81.0526%","left":"19.7368%"},"r_fender_r":{"top":"81.0526%","left":"79.2105%"},"roof":{"top":"64.0351%","left":"49.2105%"},"rear_glass":{"top":"80.5263%","left":"49.2105%"},"trunk":{"top":"90.5263%","left":"49.2105%"},"rear_bumper":{"top":"92.9825%","left":"56.1842%"},"side_sill_l":{"top":"42.2807%","left":"8.6842%"},"side_sill_r":{"top":"42.2807%","left":"90.2632%"},"pillar_l":{"top":"55.614%","left":"25.6579%"},"pillar_r":{"top":"55.614%","left":"73.0263%"},"wheel_fl":{"top":"25.614%","left":"11.5789%"},"wheel_fr":{"top":"25.614%","left":"87.2368%"},"wheel_rl":{"top":"75.2632%","left":"11.5789%"},"wheel_rr":{"top":"75.2632%","left":"87.2368%"},"tire_fl":{"top":"30.3509%","left":"14.4737%"},"tire_fr":{"top":"30.3509%","left":"85.0%"},"tire_rl":{"top":"80.0%","left":"14.4737%"},"tire_rr":{"top":"80.0%","left":"85.0%"}};
+const VEHICLE_EXTERIOR_LABELS=[{text:'앞유리',x:374,y:216},{text:'뒷유리',x:374,y:432}];
+const VEHICLE_EXTERIOR_CALLOUTS=[{key:'mirror_l',x:296,y:193},{key:'mirror_r',x:454,y:193}];
+function vehicleExteriorAnnotationPoints(items){
+ return VEHICLE_EXTERIOR_CALLOUTS.filter(p=>items.some(item=>item.key===p.key)).map(p=>({...p,toX:parseFloat(VEHICLE_EXTERIOR_POSITIONS[p.key].left)*7.6,toY:parseFloat(VEHICLE_EXTERIOR_POSITIONS[p.key].top)*5.7}));
+}
+function mountVehicleExteriorAnnotations(plane,items){
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('class','report-exterior-annotations');svg.setAttribute('viewBox','0 0 760 570');svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
+ vehicleExteriorAnnotationPoints(items).forEach(p=>{const line=document.createElementNS(ns,'line');line.setAttribute('x1',p.x);line.setAttribute('y1',p.y);line.setAttribute('x2',p.toX);line.setAttribute('y2',p.toY);line.setAttribute('stroke','#98a3ab');line.setAttribute('stroke-width','1');svg.append(line)});
+ VEHICLE_EXTERIOR_LABELS.forEach(p=>{const text=document.createElementNS(ns,'text');text.setAttribute('x',p.x);text.setAttribute('y',p.y);text.setAttribute('text-anchor','middle');text.setAttribute('dominant-baseline','middle');text.setAttribute('font-family',"Arial, 'Noto Sans KR', sans-serif");text.setAttribute('font-size','16');text.setAttribute('font-weight','500');text.setAttribute('fill','#242424');text.textContent=p.text;svg.append(text)});plane.append(svg);
+}
+function drawVehicleExteriorAnnotations(ctx,left,top,width,height,items){
+ ctx.save();ctx.strokeStyle='#98a3ab';ctx.lineWidth=width/760;
+ vehicleExteriorAnnotationPoints(items).forEach(p=>{ctx.beginPath();ctx.moveTo(left+width*p.x/760,top+height*p.y/570);ctx.lineTo(left+width*p.toX/760,top+height*p.toY/570);ctx.stroke()});
+ ctx.fillStyle='#242424';ctx.font=(width*16/760)+'px Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';VEHICLE_EXTERIOR_LABELS.forEach(p=>ctx.fillText(p.text,left+width*p.x/760,top+height*p.y/570));ctx.restore();
+}
+
 const vehicleExteriorSelections=new Map();
 function vehicleExteriorPinStatus(item){
  if(item.state==='pending'||!item.state)return {label:'미확인',kind:'pending'};
@@ -221,7 +241,7 @@ function mountVehicleExteriorMap(container,items,photos,options){
  const zoom=document.createElement('button');zoom.type='button';zoom.textContent='도면 확대';zoom.setAttribute('aria-pressed','false');toolbar.append(hint);
  const viewport=document.createElement('div');viewport.className='report-exterior-map-viewport';viewport.tabIndex=0;viewport.setAttribute('aria-label','외관 상태 전개도');
  const plane=document.createElement('div');plane.className='report-exterior-map-plane';
- const image=document.createElement('img');image.src='assets/vehicle-exterior-original.webp';image.alt='차량 외관 전체 전개도';image.width=760;image.height=570;plane.append(image);viewport.append(plane);
+ const image=document.createElement('img');image.src='assets/vehicle-exterior-original.webp';image.alt='차량 외관 전체 전개도';image.width=760;image.height=570;plane.append(image);mountVehicleExteriorAnnotations(plane,list);viewport.append(plane);
  const panel=document.createElement('div');panel.className='report-exterior-selected';panel.setAttribute('aria-live','polite');
  const popup=document.createElement('dialog');popup.className='report-exterior-popup';popup.setAttribute('aria-label','외관 부위 상세');
  const close=document.createElement('button');close.type='button';close.className='report-exterior-popup-close';close.textContent='닫기';close.onclick=()=>popup.close();popup.append(close,panel);
@@ -296,6 +316,7 @@ document.querySelector('.dealer-brand-name span').textContent='디자인 미리�
 
 if(location.search==='?view=exterior')document.querySelector('main.buyer-report').vehicleReportSelectChapter(3);
 </script></body></html>
+
 
 
 
