@@ -104,7 +104,7 @@ function renderBuyerReport(data){
  const report=data?.report;if(!report||typeof report!=='object')throw Error('리포트가 없습니다.');
  const expiry=new Date(data.expiresAt).getTime();if(!Number.isFinite(expiry)||expiry<=Date.now())throw Error('기간이 종료되었습니다.');reportExpiry=expiry;
  const fields=rows(report.fields).map(field=>field?.label==='판매가'?{...field,value:formatVehicleReportPrice(field.value)}:field);document.getElementById('vehicleTitle').textContent=fields.find(f=>f?.label==='차량명')?.value||'차량리포트';document.getElementById('premiumVehicleSub').textContent=[fields.find(f=>f?.label==='차량번호')?.value,fields.find(f=>f?.label==='검차일')?.value].filter(Boolean).join(' · ');document.getElementById('premiumSalePrice').textContent=fields.find(f=>f?.label==='판매가')?.value||'미입력';
- document.getElementById('reportMeta').textContent='공유일 '+new Date(data.publishedAt).toLocaleString('ko-KR')+' · 열람 기한 '+new Date(expiry).toLocaleString('ko-KR');
+ document.getElementById('reportMeta').textContent='최종 반영 '+new Date(data.updatedAt||data.publishedAt).toLocaleString('ko-KR')+' · 열람 기한 '+new Date(expiry).toLocaleString('ko-KR');
  const content=document.getElementById('reportContent');content.replaceChildren();
  const allRows=rows(report.detail),totals={normal:0,issue:0,unavailable:0,pending:0};allRows.forEach(r=>totals[Object.hasOwn(REPORT_STATES,r?.state)?r.state:'pending']++);
  const overview=node('div',undefined,'premium-overview'),overviewTitle=node('div',undefined,'premium-overview-title');overviewTitle.append(node('strong','검차 확인 요약'),node('span',(allRows.length-totals.pending)+' / '+allRows.length+' 항목 확인'));overview.append(overviewTitle);const metrics=node('div',undefined,'premium-metrics');[['normal','정상'],['issue','이상 기록'],['unavailable','확인불가'],['pending','미확인']].forEach(([key,label])=>{const metric=node('div',undefined,'premium-metric '+key);metric.append(node('strong',totals[key]),node('span',label));metrics.append(metric)});overview.append(metrics);
@@ -123,8 +123,13 @@ function renderBuyerReport(data){
  mountVehicleReportChapters(document.querySelector('main.buyer-report'),'viewer:'+location.hash);
  mountVehicleReportIssueFilter(document.querySelector('main.buyer-report'),'viewer:'+location.hash);
 }
+function brokerTokenFromHash(hash){
+ let value;try{value=decodeURIComponent(String(hash||'').replace(/^#/,''))}catch{return ''}
+ if(/^([0-9a-f]{32}|[0-9a-f]{64})$/.test(value))return value;
+ return /^[0-9가-힣A-Za-z]{1,32}-[0-9a-f]{32}$/.test(value)?value.slice(value.lastIndexOf('-')+1):'';
+}
 async function loadBuyerReport(){
- const request=++reportRequest;const token=location.hash.slice(1);if(!/^[0-9a-f]{64}$/.test(token)){unavailable('리포트 링크를 확인해주세요.','담당자가 전달한 전체 링크로 다시 접속해주세요.');return}
+ const request=++reportRequest;const token=brokerTokenFromHash(location.hash);if(!token){unavailable('리포트 링크를 확인해주세요.','담당자가 전달한 전체 링크로 다시 접속해주세요.');return}
  try{const response=await fetch(REPORT_API+'/rest/v1/rpc/read_broker_report',{method:'POST',headers:{apikey:REPORT_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:token}),cache:'no-store',credentials:'omit'});if(!response.ok)throw Error('request');const data=await response.json();if(request!==reportRequest)return;if(!data){unavailable('열람이 종료된 리포트입니다.','공유가 해제되었거나 기간이 만료되었습니다. 담당자에게 새 링크를 요청해주세요.');return}renderBuyerReport(data)}catch{if(request!==reportRequest)return;unavailable('리포트를 불러오지 못했습니다.','네트워크 연결을 확인하고 새로고침해주세요. 계속되면 담당자에게 문의해주세요.')}
 }
 window.addEventListener('pageshow',loadBuyerReport);window.addEventListener('hashchange',loadBuyerReport);
@@ -309,4 +314,5 @@ function mountDealerReportCover(root,fields,photos,options){
 }
 
 </script></body></html>
+
 

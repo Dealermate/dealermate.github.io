@@ -3189,7 +3189,7 @@ body.dealer-report-page{background:#f2f5f6}
     </div>
   </div>
 
-  <div class="broker-share-panel"><h3>구매자에게 링크로 전달</h3><p>링크를 받은 사람은 로그인 없이 보기만 가능합니다. 공유한 시점의 내용이 제공되며, 약 7일 후 종료됩니다. 내용을 수정하면 새 링크를 만들어 전달해주세요.</p><div class="broker-share-buttons"><button id="brokerShareCreate" class="record-btn primary" type="button" onclick="createBrokerShare()">리포트 링크 만들기</button><button id="brokerShareCopy" class="record-btn" type="button" onclick="copyBrokerShare()" disabled>링크 복사</button><button id="brokerShareRevoke" class="record-btn" type="button" onclick="revokeBrokerShare()" disabled>공유 해제</button></div><label for="brokerShareLink" class="broker-share-label">구매자 열람 링크</label><input id="brokerShareLink" type="url" readonly placeholder="링크 만들기를 눌러주세요"><div id="brokerShareStatus" role="status" aria-live="polite">공유 중인 링크가 없습니다.</div><details id="brokerShareSetup" hidden><summary>최초 공유 설정 안내</summary><p>관리자가 Supabase SQL Editor에서 <a href="https://github.com/Dealermate/dealermate.github.io/blob/main/broker_report_sharing.sql" target="_blank" rel="noopener noreferrer">공유 설정 SQL</a> 내용을 한 번 실행하면 사용할 수 있습니다.</p></details></div>
+  <div class="broker-share-panel"><h3>구매자에게 링크로 전달</h3><p>링크를 받은 사람은 로그인 없이 보기만 가능합니다. 검차 저장은 작업 내용만 저장합니다. 수정한 내용을 고객에게 공개하려면 리포트 업데이트를 눌러주세요. 같은 링크에 반영되며, 반영 후 약 7일간 열람할 수 있습니다.</p><div class="broker-share-buttons"><button id="brokerShareCreate" class="record-btn primary" type="button" onclick="createBrokerShare()">새 링크 만들기</button><button id="brokerShareUpdate" class="record-btn primary" type="button" onclick="updateBrokerShare()" disabled>리포트 업데이트</button><button id="brokerShareCopy" class="record-btn" type="button" onclick="copyBrokerShare()" disabled>링크 복사</button><button id="brokerShareRevoke" class="record-btn" type="button" onclick="revokeBrokerShare()" disabled>공유 해제</button></div><label for="brokerShareLink" class="broker-share-label">구매자 열람 링크</label><input id="brokerShareLink" type="url" readonly placeholder="링크 만들기를 눌러주세요"><div id="brokerShareStatus" role="status" aria-live="polite">공유 중인 링크가 없습니다.</div><details id="brokerShareSetup" hidden><summary>공유 기능 설정 안내</summary><p>관리자가 Supabase SQL Editor에서 <a href="https://github.com/Dealermate/dealermate.github.io/blob/main/broker_report_sharing.sql" target="_blank" rel="noopener noreferrer">공유 설정 SQL</a> 최신 내용을 한 번 실행하면 사용할 수 있습니다.</p></details></div>
 <div class="record-actions">
     <button type="button" class="record-btn primary" onclick="saveInspectionRecord()">
       <i class="fa-solid fa-floppy-disk"></i> 검차 저장
@@ -4916,7 +4916,7 @@ async function saveInspectionRecord(){
 
     if(error) throw error;
 
-    await deletePhotoPaths(removedPaths);
+    await deletePhotoPaths(await brokerUnsharedPhotoPaths(removedPaths,recordId));
 
     brokerStorage.setItem('activeInspectionRecordId',data.id);
     currentInspectionPhotos=await hydratePhotoMetadata(data.photos||[]);
@@ -4928,6 +4928,7 @@ async function saveInspectionRecord(){
     }
 
     alert(existing?'검차 기록을 업데이트했습니다.':'검차 기록을 저장했습니다.');
+    if(typeof brokerActiveShare!=='undefined'&&brokerActiveShare?.recordId===String(data.id)){document.getElementById('brokerShareStatus').textContent='검차 저장 완료 · 고객에게 최신 내용을 공개하려면 리포트 업데이트를 눌러주세요.';}
     await renderSavedRecords();
     return data;
   }catch(error){
@@ -5907,24 +5908,30 @@ document.addEventListener('DOMContentLoaded',()=>{
  const actions=document.querySelector('[data-page-panel="4"] .record-actions');const button=document.createElement('button');button.className='record-btn';button.type='button';button.textContent='리포트 인쇄 / PDF';button.onclick=printInspection;actions.append(button);
 });
 
-let brokerShareBusy=false;
-function brokerShareUrl(token){return new URL('buyer-report.html#'+token,location.href).toString()}
+let brokerShareBusy=false,brokerActiveShare=null,brokerShareRefreshRequest=0;
+function brokerShareUrl(token,vehicleNumber){
+ if(/^[0-9a-f]{64}$/.test(token))return new URL('buyer-report.html#'+token,location.href).toString();
+ const plate=String(vehicleNumber||'차량').replace(/[^0-9가-힣A-Za-z]/g,'').slice(0,32)||'차량';
+ return new URL('v.html',location.href).toString()+'#'+plate+'-'+token;
+}
 function renderBrokerShare(data){
  const link=document.getElementById('brokerShareLink'),status=document.getElementById('brokerShareStatus');
- link.value=data?.token?brokerShareUrl(data.token):'';
+ brokerActiveShare=data?.token?{...data,recordId:brokerStorage.getItem('activeInspectionRecordId')}:null;
+ link.value=data?.token?brokerShareUrl(data.token,data.vehicleNumber):'';
  document.getElementById('brokerShareCopy').disabled=!link.value;
- document.getElementById('brokerShareRevoke').disabled=!link.value;
- status.textContent=data?.token?'공유 중 · '+new Date(data.expiresAt).toLocaleString('ko-KR')+'까지 열람 가능':'공유 중인 링크가 없습니다.';
+ document.getElementById('brokerShareRevoke').disabled=brokerShareBusy||!link.value;
+ document.getElementById('brokerShareUpdate').disabled=brokerShareBusy||!link.value;
+ status.textContent=data?.token?'공유 중 · '+new Date(data.expiresAt).toLocaleString('ko-KR')+'까지 열람 가능'+(data.updatedAt?' · 마지막 반영 '+new Date(data.updatedAt).toLocaleString('ko-KR'):''):'공유 중인 링크가 없습니다.';
 }
 function brokerShareError(error){
- const status=document.getElementById('brokerShareStatus');
- const missing=['PGRST202','42883','42P01'].includes(error?.code);
- status.textContent=missing?'링크 공유를 처음 사용하려면 아래 공유 설정을 한 번 적용해주세요.':'링크 공유 처리 실패: '+(error?.message||'다시 시도해주세요.');
+ const missing=['PGRST202','42883','42P01','42703'].includes(error?.code);
+ document.getElementById('brokerShareStatus').textContent=missing?'리포트 업데이트 기능을 사용하려면 아래 공유 설정 SQL을 한 번 실행해주세요. 기존 링크는 유지됩니다.':'링크 공유 처리 실패: '+(error?.message||'다시 시도해주세요.');
  document.getElementById('brokerShareSetup').hidden=!missing;
 }
 async function refreshBrokerShare(){
- const id=brokerStorage.getItem('activeInspectionRecordId');if(!id||!currentCloudUser||!supabaseClient){renderBrokerShare(null);return}
- try{const {data,error}=await supabaseClient.rpc('get_broker_report_share',{p_record_id:id});if(error)throw error;renderBrokerShare(data)}catch(error){renderBrokerShare(null);brokerShareError(error)}
+ const request=++brokerShareRefreshRequest,id=brokerStorage.getItem('activeInspectionRecordId'),userId=currentCloudUser?.id;
+ if(!id||!userId||!supabaseClient){renderBrokerShare(null);return}
+ try{const {data,error}=await supabaseClient.rpc('get_broker_report_share',{p_record_id:id});if(request!==brokerShareRefreshRequest||id!==brokerStorage.getItem('activeInspectionRecordId')||userId!==currentCloudUser?.id||brokerShareBusy)return;if(error)throw error;renderBrokerShare(data)}catch(error){if(request!==brokerShareRefreshRequest||id!==brokerStorage.getItem('activeInspectionRecordId')||userId!==currentCloudUser?.id||brokerShareBusy)return;renderBrokerShare(null);brokerShareError(error)}
 }
 function brokerWorkspaceFingerprint(value){
  const normalize=item=>{
@@ -5934,26 +5941,48 @@ function brokerWorkspaceFingerprint(value){
  };
  return JSON.stringify(normalize(value));
 }
-async function createBrokerShare(){
+function brokerSharePhotoPaths(urls){
+ const result=[];for(const raw of urls||[]){try{const url=new URL(raw),prefix='/storage/v1/object/sign/'+CLOUD_PHOTO_BUCKET+'/';if(url.origin===SUPABASE_URL&&url.pathname.startsWith(prefix))result.push(decodeURIComponent(url.pathname.slice(prefix.length)))}catch{}}
+ return result;
+}
+async function brokerUnsharedPhotoPaths(paths,recordId){
+ if(!paths.length)return paths;
+ try{const {data,error}=await supabaseClient.rpc('get_broker_report_share',{p_record_id:String(recordId)});if(error)throw error;
+  if(!data?.token)return paths;
+  // Older servers do not expose the published photo list. Keep photos until configured.
+  if(!Array.isArray(data.photoUrls))return [];
+  const shared=new Set(brokerSharePhotoPaths(data.photoUrls));return paths.filter(path=>!shared.has(path));
+ }catch(error){console.warn('Published photos retained until sharing state is available.',error);return []}
+}
+function createBrokerShare(){return publishBrokerShare(false)}
+function updateBrokerShare(){return publishBrokerShare(true)}
+async function publishBrokerShare(updating){
  if(brokerShareBusy||!requireCloudUser())return;
- const before=brokerReportSections();const beforeWorkspace=brokerWorkspaceFingerprint(captureInspectionWorkspace());
+ const before=brokerReportSections(),beforeWorkspace=brokerWorkspaceFingerprint(captureInspectionWorkspace()),initialId=brokerStorage.getItem('activeInspectionRecordId'),userId=currentCloudUser?.id;
+ const previous=brokerActiveShare;
  if(!document.getElementById('carNumber').value.trim()){alert('차량번호를 입력해주세요.');showPage(0);return}
- if(document.getElementById('brokerShareLink').value&&!confirm('새 링크를 만들면 기존 링크는 종료됩니다. 현재 내용으로 새로 공유할까요?'))return;
- brokerShareBusy=true;document.getElementById('brokerShareCreate').disabled=true;
- document.getElementById('brokerShareStatus').textContent='검차 기록과 사진을 저장하고 공유 링크를 준비합니다.';
+ if(updating&&(!previous?.token||previous.recordId!==initialId)){await refreshBrokerShare();document.getElementById('brokerShareStatus').textContent='공유 상태를 확인한 후 리포트 업데이트를 다시 눌러주세요.';return}
+ if(!updating&&document.getElementById('brokerShareLink').value&&!confirm('새 링크를 만들면 기존 링크는 종료됩니다. 같은 링크를 유지하려면 취소 후 리포트 업데이트를 눌러주세요. 새로 만들까요?'))return;
+ brokerShareBusy=true;++brokerShareRefreshRequest;
+ ['brokerShareCreate','brokerShareUpdate','brokerShareRevoke'].forEach(id=>document.getElementById(id).disabled=true);
+ document.getElementById('brokerShareStatus').textContent=updating?'검차 기록과 사진을 저장하고 기존 링크에 최신 내용을 반영합니다.':'검차 기록과 사진을 저장하고 공유 링크를 준비합니다.';
  try{
-  const saved=await saveInspectionRecord();if(!saved){throw new Error('검차 저장을 완료한 후 다시 시도해주세요.')}
-  if(brokerWorkspaceFingerprint(saved.workspace)!==beforeWorkspace||brokerWorkspaceFingerprint(saved.workspace)!==brokerWorkspaceFingerprint(captureInspectionWorkspace()))throw new Error('저장 중 검차내용이 변경되었습니다. 링크 만들기를 다시 눌러주세요.');
+  const saved=await saveInspectionRecord();if(!saved)throw new Error('검차 저장을 완료한 후 다시 시도해주세요.');
+  const assertUnchanged=()=>{if(userId!==currentCloudUser?.id||String(saved.id)!==brokerStorage.getItem('activeInspectionRecordId')||(initialId&&String(saved.id)!==initialId)||brokerWorkspaceFingerprint(saved.workspace)!==beforeWorkspace||brokerWorkspaceFingerprint(captureInspectionWorkspace())!==beforeWorkspace)throw new Error('저장 중 검차내용이 변경되었습니다. 다시 눌러주세요.');};assertUnchanged();
   const signed=await Promise.all((saved.photos||[]).map(async photo=>{
    const {data,error}=await supabaseClient.storage.from(CLOUD_PHOTO_BUCKET).createSignedUrl(photo.path,7*24*60*60);
    if(error||!data?.signedUrl)throw error||new Error('공유 사진 주소 생성 실패');
    return {url:data.signedUrl,label:brokerPartName(photo.partKey),partKey:photo.partKey||'',category:photo.partKey?'finding':'vehicle'};
   }));
+  assertUnchanged();
   const snapshot={fields:before.fields,exterior:before.exterior,detail:before.detail,accidents:before.accidents,note:before.note,photos:signed};
-  const {data,error}=await supabaseClient.rpc('publish_broker_report',{p_record_id:String(saved.id),p_snapshot:snapshot});if(error)throw error;
-  if(!/^[0-9a-f]{64}$/.test(data?.token||''))throw new Error('공유 링크 생성 실패');
+  const {data,error}=await supabaseClient.rpc(updating?'update_broker_report':'publish_broker_report',{p_record_id:String(saved.id),p_snapshot:snapshot,...(updating?{p_expected_token:previous.token}:{})});if(error)throw error;
+  if(!/^([0-9a-f]{32}|[0-9a-f]{64})$/.test(data?.token||''))throw new Error('공유 링크 처리 실패');
+  if(updating&&data.token!==previous.token)throw new Error('공유 링크가 변경되었습니다. 공유 상태를 다시 확인해주세요.');
+  if(userId!==currentCloudUser?.id||String(saved.id)!==brokerStorage.getItem('activeInspectionRecordId'))return;
   renderBrokerShare(data);document.getElementById('brokerShareSetup').hidden=true;
- }catch(error){console.error(error);brokerShareError(error)}finally{brokerShareBusy=false;document.getElementById('brokerShareCreate').disabled=false}
+  if(updating)document.getElementById('brokerShareStatus').textContent='리포트를 업데이트했습니다. 기존 링크를 다시 열거나 새로고침하면 최신 내용이 보입니다. · '+new Date(data.expiresAt).toLocaleString('ko-KR')+'까지';
+ }catch(error){console.error(error);if(userId===currentCloudUser?.id&&(!initialId||initialId===brokerStorage.getItem('activeInspectionRecordId')))brokerShareError(error)}finally{brokerShareBusy=false;document.getElementById('brokerShareCreate').disabled=false;const active=brokerActiveShare?.recordId===brokerStorage.getItem('activeInspectionRecordId');document.getElementById('brokerShareUpdate').disabled=!active;document.getElementById('brokerShareRevoke').disabled=!active}
 }
 async function copyBrokerShare(){
  const value=document.getElementById('brokerShareLink').value;if(!value)return;
@@ -5962,8 +5991,8 @@ async function copyBrokerShare(){
 async function revokeBrokerShare(){
  const id=brokerStorage.getItem('activeInspectionRecordId');if(brokerShareBusy||!id||!requireCloudUser())return;
  if(!confirm('공유를 해제하면 이 링크로 리포트를 열 수 없습니다. 해제할까요?'))return;
- brokerShareBusy=true;document.getElementById('brokerShareRevoke').disabled=true;
- try{const {error}=await supabaseClient.rpc('revoke_broker_report',{p_record_id:id});if(error)throw error;renderBrokerShare(null);document.getElementById('brokerShareStatus').textContent='공유를 해제했습니다.'}catch(error){brokerShareError(error);document.getElementById('brokerShareRevoke').disabled=false}finally{brokerShareBusy=false}
+ brokerShareBusy=true;['brokerShareCreate','brokerShareUpdate','brokerShareRevoke'].forEach(key=>document.getElementById(key).disabled=true);
+ try{const {error}=await supabaseClient.rpc('revoke_broker_report',{p_record_id:id});if(error)throw error;if(id!==brokerStorage.getItem('activeInspectionRecordId'))return;renderBrokerShare(null);document.getElementById('brokerShareStatus').textContent='공유를 해제했습니다.'}catch(error){if(id===brokerStorage.getItem('activeInspectionRecordId'))brokerShareError(error)}finally{brokerShareBusy=false;document.getElementById('brokerShareCreate').disabled=false;const active=brokerActiveShare?.recordId===brokerStorage.getItem('activeInspectionRecordId');document.getElementById('brokerShareUpdate').disabled=!active;document.getElementById('brokerShareRevoke').disabled=!active}
 }
 document.addEventListener('DOMContentLoaded',()=>{
  refreshBrokerShare();document.querySelector('.page-tab[data-page="4"]').addEventListener('click',refreshBrokerShare);
@@ -6192,6 +6221,7 @@ function mountDealerReportCover(root,fields,photos,options){
 <dialog id="brokerLeaveDialog" class="broker-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="brokerLeaveMessage"></p><div><button id="brokerLeaveSave" type="button" onclick="decideBrokerLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelBrokerLeave()">계속 작성</button><button type="button" onclick="decideBrokerLeave(false)">저장 없이 나가기</button></div></dialog>
 </body>
 </html>
+
 
 
 
