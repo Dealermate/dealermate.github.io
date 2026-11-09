@@ -5960,6 +5960,7 @@ async function publishBrokerShare(updating){
  if(brokerShareBusy||!requireCloudUser())return;
  const before=brokerReportSections(),beforeWorkspace=brokerWorkspaceFingerprint(captureInspectionWorkspace()),initialId=brokerStorage.getItem('activeInspectionRecordId'),userId=currentCloudUser?.id;
  const previous=brokerActiveShare;
+ const photoShape=photos=>(photos||[]).map(p=>({name:p.name||'photo.jpg',partKey:p.partKey||''}));const beforePhotos=brokerWorkspaceFingerprint(photoShape(currentInspectionPhotos));
  if(!document.getElementById('carNumber').value.trim()){alert('차량번호를 입력해주세요.');showPage(0);return}
  if(updating&&(!previous?.token||previous.recordId!==initialId)){await refreshBrokerShare();document.getElementById('brokerShareStatus').textContent='공유 상태를 확인한 후 리포트 업데이트를 다시 눌러주세요.';return}
  if(!updating&&document.getElementById('brokerShareLink').value&&!confirm('새 링크를 만들면 기존 링크는 종료됩니다. 같은 링크를 유지하려면 취소 후 리포트 업데이트를 눌러주세요. 새로 만들까요?'))return;
@@ -5968,7 +5969,7 @@ async function publishBrokerShare(updating){
  document.getElementById('brokerShareStatus').textContent=updating?'검차 기록과 사진을 저장하고 기존 링크에 최신 내용을 반영합니다.':'검차 기록과 사진을 저장하고 공유 링크를 준비합니다.';
  try{
   const saved=await saveInspectionRecord();if(!saved)throw new Error('검차 저장을 완료한 후 다시 시도해주세요.');
-  const assertUnchanged=()=>{if(userId!==currentCloudUser?.id||String(saved.id)!==brokerStorage.getItem('activeInspectionRecordId')||(initialId&&String(saved.id)!==initialId)||brokerWorkspaceFingerprint(saved.workspace)!==beforeWorkspace||brokerWorkspaceFingerprint(captureInspectionWorkspace())!==beforeWorkspace)throw new Error('저장 중 검차내용이 변경되었습니다. 다시 눌러주세요.');};assertUnchanged();
+  const assertUnchanged=()=>{if(userId!==currentCloudUser?.id||String(saved.id)!==brokerStorage.getItem('activeInspectionRecordId')||(initialId&&String(saved.id)!==initialId)||brokerWorkspaceFingerprint(saved.workspace)!==beforeWorkspace||brokerWorkspaceFingerprint(captureInspectionWorkspace())!==beforeWorkspace||brokerWorkspaceFingerprint(photoShape(saved.photos))!==beforePhotos||brokerWorkspaceFingerprint(brokerGuardPhotoRows(saved.photos))!==brokerWorkspaceFingerprint(brokerGuardPhotoRows(currentInspectionPhotos)))throw new Error('저장 중 검차내용이 변경되었습니다. 다시 눌러주세요.');};assertUnchanged();
   const signed=await Promise.all((saved.photos||[]).map(async photo=>{
    const {data,error}=await supabaseClient.storage.from(CLOUD_PHOTO_BUCKET).createSignedUrl(photo.path,7*24*60*60);
    if(error||!data?.signedUrl)throw error||new Error('공유 사진 주소 생성 실패');
