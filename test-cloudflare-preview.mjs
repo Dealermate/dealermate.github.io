@@ -4,8 +4,9 @@ const token='a'.repeat(32),base='https://test.workers.dev',signed='https://crmee
 let record={report:{fields:[{label:'차량명',value:'테스트 <img src=x>'},{label:'연식·최초등록',value:'2022년'},{label:'판매가',value:'2,350만원'},{label:'이전비 계좌',value:'PRIVATE_ACCOUNT'}],photos:[{category:'finding',partKey:'hood',url:signed},{category:'vehicle',url:signed}]},expiresAt:new Date(Date.now()+600000).toISOString(),publishedAt:new Date().toISOString()};
 let imageCalls=0,rpcCalls=0;
 globalThis.fetch=async(url,options)=>{
+ assert.notEqual(options.redirect,'error','Workers does not support redirect:error');
  if(url.endsWith('/rest/v1/rpc/read_broker_report')){rpcCalls++;assert.equal(JSON.parse(options.body).p_token,token);return Response.json(record)}
- assert.equal(url,signed);assert.equal(options.redirect,'error');imageCalls++;return new Response(new Uint8Array([1,2,3]),{headers:{'Content-Type':'image/jpeg'}});
+ assert.equal(url,signed);assert.equal(options.redirect,'manual');imageCalls++;return new Response(new Uint8Array([1,2,3]),{headers:{'Content-Type':'image/jpeg'}});
 };
 let response=await worker.fetch(new Request(base+'/r/'+encodeURIComponent('12가3456-'+token))),body=await response.text();
 assert.equal(response.status,200);assert.match(body,/property="og:image"/);assert.match(body,/2022년/);assert.match(body,/2,350만원/);assert.match(body,/테스트 &lt;img src=x&gt;/);assert(!body.includes('<img src=x>'));assert(!body.includes('PRIVATE_ACCOUNT'));assert.match(body,/location.replace\("https:\/\/dealermate.github.io\/v.html#/);assert.equal(response.headers.get('cache-control'),'private, no-store, max-age=0');
