@@ -13,7 +13,7 @@ function parseToken(segment){
  return /^[0-9가-힣A-Za-z]{1,32}-[0-9a-f]{32}$/.test(value)?value.slice(value.lastIndexOf('-')+1):'';
 }
 async function readReport(token){
- const response=await fetch(PROJECT+'/rest/v1/rpc/read_broker_report',{method:'POST',headers:{apikey:PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:token}),redirect:'error',signal:AbortSignal.timeout(20000)});
+ const response=await fetch(PROJECT+'/rest/v1/rpc/read_broker_report',{method:'POST',headers:{apikey:PUBLIC_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_token:token}),redirect:'manual',signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error('REPORT_HTTP_'+response.status);
  const data=await response.json(),expires=Date.parse(data?.expiresAt||'');
  if(!data?.report||!Number.isFinite(expires)||expires<=Date.now())return null;
@@ -39,7 +39,7 @@ export default {
    const report=data.report,photo=firstVehiclePhoto(report);
    if(match[1]==='image'){
     if(!photo)return new Response(null,{status:404,headers:commonHeaders});
-    const image=await fetch(photo.url,{redirect:'error',signal:AbortSignal.timeout(20000)});
+    const image=await fetch(photo.url,{redirect:'manual',signal:AbortSignal.timeout(20000)});
     const type=(image.headers.get('content-type')||'').split(';')[0].trim();
     if(!image.ok||!['image/jpeg','image/png','image/webp','image/gif','image/avif'].includes(type))return new Response(null,{status:404,headers:commonHeaders});
     return new Response(request.method==='HEAD'?null:image.body,{headers:{...commonHeaders,'Content-Type':type}});
