@@ -6337,8 +6337,18 @@ function mountDealerReportCover(root,fields,photos,options){
 
 <dialog id="brokerPhotoViewer" class="photo-fullscreen"><header><span id="brokerExpandedPhotoTitle">확인 사진</span><div><button type="button" onclick="document.getElementById('brokerPhotoViewer').classList.toggle('zoomed')">확대 / 맞춤</button><button type="button" onclick="document.getElementById('brokerPhotoViewer').close()">닫기</button></div></header><div class="photo-surface"><img id="brokerExpandedPhoto" alt="확인 사진" onclick="document.getElementById('brokerPhotoViewer').classList.toggle('zoomed')"></div></dialog>
 <dialog id="brokerLeaveDialog" class="broker-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="brokerLeaveMessage"></p><div><button id="brokerLeaveSave" type="button" onclick="decideBrokerLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelBrokerLeave()">계속 작성</button><button type="button" onclick="decideBrokerLeave(false)">저장 없이 나가기</button></div></dialog>
+<script>
+(function(){
+ const bar=document.querySelector('.purchase-top-savebar,.broker-top-savebar');
+ if(!bar||!window.AndroidExternal)return;
+ const button=document.createElement('button');button.type='button';button.textContent='OBD 테스트';button.style.cssText='padding:8px 10px;font-size:12px;white-space:nowrap';
+ button.onclick=function(){if(typeof AndroidExternal.openObdTest==='function')AndroidExternal.openObdTest();else alert('OBD 테스트를 사용하려면 최신 APK를 설치해주세요.');};
+ bar.append(button);
+})();
+</script>
 </body>
 </html>
+
 
 
 
