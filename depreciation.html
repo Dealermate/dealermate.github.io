@@ -2822,6 +2822,20 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 </div>
 <!-- 도색 -->
 
+<section class="section share-preview-photo-section" style="margin-bottom:16px">
+ <h2>공유 미리보기 사진</h2>
+ <p style="font-size:12px;color:var(--muted,#788697);line-height:1.6">카카오톡 등으로 링크를 공유할 때 보여줄 사진 1장입니다. 차량사진·부위별 확인사진과 별도로 저장됩니다.</p>
+ <div id="sharePreviewPhotoBox" aria-live="polite"></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+  <button type="button" class="vehicle-photo-add" data-share-cover-control onclick="document.getElementById('sharePreviewPhotoAlbum').click()">사진 선택·변경</button>
+  <button type="button" class="vehicle-photo-add" data-share-cover-control onclick="document.getElementById('sharePreviewPhotoCamera').click()">사진 촬영</button>
+  <button type="button" id="sharePreviewPhotoRemove" class="vehicle-photo-add" data-share-cover-control onclick="removeSharePreviewPhoto()" hidden>삭제</button>
+ </div>
+ <input id="sharePreviewPhotoAlbum" type="file" accept="image/*" hidden onchange="setSharePreviewPhoto(this)" aria-label="공유 미리보기 사진 선택">
+ <input id="sharePreviewPhotoCamera" type="file" accept="image/*" capture="environment" hidden onchange="setSharePreviewPhoto(this)" aria-label="공유 미리보기 사진 촬영">
+ <p style="font-size:12px;color:var(--muted,#788697)">사진 변경 후 검차를 저장하고 공유 리포트를 다시 반영해주세요.</p>
+</section>
+
 <!-- 기본정보 - 차량사진 -->
 <div class="section vehicle-photo-section">
   <h2><i class="fa-solid fa-camera"></i> 차량사진</h2>
@@ -4980,6 +4994,7 @@ async function deletePhotoPaths(paths){
 }
 
 async function saveInspectionRecord(){
+  if(sharePreviewPhotoBusy){alert('미리보기 사진을 준비하고 있습니다. 잠시 후 저장해주세요.');return null;}
   const user=requireCloudUser();
   if(!user) return;
 
@@ -5333,6 +5348,7 @@ function choosePhotoSource(source){
    PHOTO HANDLING
 ========================================================= */
 function renderInspectionPhotos(){
+  renderSharePreviewPhoto();
   renderPurchasePartPhotos();renderPurchaseDetailPhotos();
   if(purchaseGuardReady)updatePurchaseSaveIndicator();
   if(purchaseEditorReady)updateAll();
@@ -5346,11 +5362,11 @@ function renderInspectionPhotos(){
     document.getElementById('photoCountTextTop')
   ].filter(Boolean);
 
-  counts.forEach(el=>el.textContent=String(currentInspectionPhotos.length));
+  counts.forEach(el=>el.textContent=String(currentInspectionPhotos.filter(p=>p.partKey!=='__share_cover').length));
 
   if(!previews.length) return;
 
-  if(!currentInspectionPhotos.length){
+  if(!currentInspectionPhotos.some(p=>p.partKey!=='__share_cover')){
     previews.forEach(preview=>{
       preview.innerHTML='<div class="photo-empty">첨부된 사진이 없습니다.</div>';
     });
@@ -5358,6 +5374,7 @@ function renderInspectionPhotos(){
   }
 
   const markup=currentInspectionPhotos.map((photo,index)=>{
+    if(photo.partKey==='__share_cover')return '';
     const src=photo.dataUrl||photo.url||'';
     return `
       <div class="photo-item">
@@ -6068,7 +6085,7 @@ function renderPurchaseDetailPhotos(){detailCards().forEach(card=>{const key='de
 function purchaseFindingRow(row){const value=typeof row==='string'?{text:row}:row;return '<li'+(value.partKey?' data-part-key="'+escapeHtml(value.partKey)+'"':'')+'>'+escapeHtml(value.text||'')+(value.partKey?'<button type="button" class="purchase-finding-link" data-purchase-part="'+escapeHtml(value.partKey)+'">사진 '+purchasePhotosFor(value.partKey).length+'장 보기</button>':'')+'</li>'}
 async function attachPurchaseReportPhotos(snapshot,photos){
  const report=JSON.parse(JSON.stringify(snapshot)),required=new Set();
- const vehiclePhoto=(photos||[]).find(photo=>photo.path&&!photo.partKey&&(!photo.category||photo.category==='vehicle'));
+ const vehiclePhoto=(photos||[]).find(photo=>photo.path&&photo.partKey==='__share_cover')||(photos||[]).find(photo=>photo.path&&!photo.partKey&&(!photo.category||photo.category==='vehicle'));
  const preview={vehicleName:(document.getElementById('carName')?.value||'').trim().slice(0,200)};
  if(vehiclePhoto){const {data,error}=await supabaseClient.storage.from(CLOUD_PHOTO_BUCKET).createSignedUrl(vehiclePhoto.path,7*24*60*60);if(error||!data?.signedUrl)throw new Error('차량사진의 공유 주소를 만들지 못했습니다. 다시 시도해주세요.');preview.photo={category:'vehicle',url:data.signedUrl};}
  if(report.sections.length)report.sections[0].rows.push({sharePreview:preview});
@@ -6098,8 +6115,31 @@ document.addEventListener('click',event=>{const pin=event.target.closest('[data-
  bar.append(button);
 })();
 </script>
+<script>
+var sharePreviewPhotoBusy=false;
+function renderSharePreviewPhoto(){
+ const box=document.getElementById('sharePreviewPhotoBox');if(!box)return;box.replaceChildren();
+ const photo=currentInspectionPhotos.find(p=>p.partKey==='__share_cover');
+ if(photo){const image=document.createElement('img');image.src=photo.dataUrl||photo.url||'';image.alt='공유 미리보기 사진';image.style.cssText='width:100%;max-width:320px;max-height:210px;object-fit:contain;border-radius:10px';box.append(image);}
+ else {const text=document.createElement('p');text.textContent='등록한 사진 한 장이 링크 미리보기에 표시됩니다. 미등록 시 기존 차량사진을 사용합니다.';box.append(text);}
+ const remove=document.getElementById('sharePreviewPhotoRemove');if(remove)remove.hidden=!photo;
+ document.querySelectorAll('[data-share-cover-control]').forEach(button=>button.disabled=sharePreviewPhotoBusy);
+}
+async function setSharePreviewPhoto(input){
+ const file=input.files?.[0];input.value='';if(!file||sharePreviewPhotoBusy)return;
+ if(!currentInspectionPhotos.some(p=>p.partKey==='__share_cover')&&currentInspectionPhotos.length>=60){alert('사진은 미리보기 사진을 포함해 최대 60장까지 저장할 수 있습니다.');return;}
+ const original=currentInspectionPhotos;sharePreviewPhotoBusy=true;renderSharePreviewPhoto();
+ try{const photo=await compressImageFile(file);if(currentInspectionPhotos!==original){alert('검차가 변경되어 사진 등록을 취소했습니다. 현재 검차에서 다시 선택해주세요.');return;}photo.partKey='__share_cover';currentInspectionPhotos=currentInspectionPhotos.filter(p=>p.partKey!=='__share_cover');currentInspectionPhotos.push(photo);renderInspectionPhotos();}
+ catch(error){alert('사진을 읽지 못했습니다. 다른 사진으로 다시 선택해주세요.');}
+ finally{sharePreviewPhotoBusy=false;renderSharePreviewPhoto();}
+}
+function removeSharePreviewPhoto(){if(sharePreviewPhotoBusy)return;currentInspectionPhotos=currentInspectionPhotos.filter(p=>p.partKey!=='__share_cover');renderInspectionPhotos();}
+
+renderSharePreviewPhoto();
+</script>
 </body>
 </html>
+
 
 
 

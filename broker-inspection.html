@@ -2898,6 +2898,20 @@ body.dealer-report-page{background:#f2f5f6}
 </tbody></table></div>
 <div class="field"><label for="brokerYear">연식·최초등록</label><input id="brokerYear" type="text" placeholder="예) 2022년 / 2022.03" oninput="saveInput('brokerYear'); updateAll()"></div><div class="field"><label for="brokerFuel">연료</label><select id="brokerFuel" onchange="saveInput('brokerFuel'); updateAll()"><option value="">연료 선택</option><option value="가솔린">가솔린</option><option value="디젤">디젤</option><option value="LPG">LPG</option><option value="하이브리드">하이브리드</option><option value="전기">전기</option><option value="수소">수소</option></select></div><div class="field"><label for="brokerColor">색상</label><input id="brokerColor" type="text" placeholder="예) 흰색" oninput="saveInput('brokerColor'); updateAll()"></div><div class="field"><label for="brokerInspectionExpiry">자동차검사 만료일</label><input id="brokerInspectionExpiry" type="date" oninput="saveInput('brokerInspectionExpiry'); updateAll()" onchange="saveInput('brokerInspectionExpiry'); updateAll()"></div><div class="field"><label for="brokerDate">검차일</label><input id="brokerDate" type="text" placeholder="예) 2026-10-15" oninput="saveInput('brokerDate'); updateAll()"></div><div class="field"><label for="brokerInspector">검차 담당자</label><input id="brokerInspector" type="text" placeholder="이름 또는 업체명" oninput="saveInput('brokerInspector'); updateAll()"></div><div class="field"><label for="brokerNote">종합 의견</label><textarea id="brokerNote" rows="3" placeholder="구매자가 알아야 할 내용" oninput="saveInput('brokerNote'); updateAll()"></textarea></div></div>
 <div hidden><input id="exteriorCount" value="0"><input id="wheelScratchCount" value="0"><input id="tireCount" value="0"><input id="spareKey" value="있음"><textarea id="repair"></textarea><textarea id="carAdvantage"></textarea><textarea id="Memo"></textarea></div>
+<section class="section share-preview-photo-section" style="margin-bottom:16px">
+ <h2>공유 미리보기 사진</h2>
+ <p style="font-size:12px;color:var(--muted,#788697);line-height:1.6">카카오톡 등으로 링크를 공유할 때 보여줄 사진 1장입니다. 차량사진·부위별 확인사진과 별도로 저장됩니다.</p>
+ <div id="sharePreviewPhotoBox" aria-live="polite"></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+  <button type="button" class="vehicle-photo-add" data-share-cover-control onclick="document.getElementById('sharePreviewPhotoAlbum').click()">사진 선택·변경</button>
+  <button type="button" class="vehicle-photo-add" data-share-cover-control onclick="document.getElementById('sharePreviewPhotoCamera').click()">사진 촬영</button>
+  <button type="button" id="sharePreviewPhotoRemove" class="vehicle-photo-add" data-share-cover-control onclick="removeSharePreviewPhoto()" hidden>삭제</button>
+ </div>
+ <input id="sharePreviewPhotoAlbum" type="file" accept="image/*" hidden onchange="setSharePreviewPhoto(this)" aria-label="공유 미리보기 사진 선택">
+ <input id="sharePreviewPhotoCamera" type="file" accept="image/*" capture="environment" hidden onchange="setSharePreviewPhoto(this)" aria-label="공유 미리보기 사진 촬영">
+ <p style="font-size:12px;color:var(--muted,#788697)">사진 변경 후 검차를 저장하고 공유 리포트를 다시 반영해주세요.</p>
+</section>
+
 <!-- 기본정보 - 차량사진 -->
 <div class="section vehicle-photo-section">
   <h2><i class="fa-solid fa-camera"></i> 차량사진</h2>
@@ -4927,6 +4941,7 @@ async function deletePhotoPaths(paths){
 }
 
 async function saveInspectionRecord(){
+  if(sharePreviewPhotoBusy){alert('미리보기 사진을 준비하고 있습니다. 잠시 후 저장해주세요.');return null;}
   const user=requireCloudUser();
   if(!user) return;
 
@@ -5275,6 +5290,7 @@ function choosePhotoSource(source){
    PHOTO HANDLING
 ========================================================= */
 function renderInspectionPhotos(){
+  renderSharePreviewPhoto();
   if(typeof brokerGuardReady!=='undefined'&&brokerGuardReady)updateBrokerSaveIndicator();
   if(typeof renderBrokerReport==='function' && typeof detailReady!=='undefined' && detailReady)renderBrokerReport();
   const vehiclePhotos=currentInspectionPhotos.map((photo,index)=>({photo,index})).filter(({photo})=>!photo.partKey);
@@ -6075,7 +6091,7 @@ async function publishBrokerShare(updating){
   const signed=await Promise.all((saved.photos||[]).map(async photo=>{
    const {data,error}=await supabaseClient.storage.from(CLOUD_PHOTO_BUCKET).createSignedUrl(photo.path,7*24*60*60);
    if(error||!data?.signedUrl)throw error||new Error('공유 사진 주소 생성 실패');
-   return {url:data.signedUrl,label:brokerPartName(photo.partKey),partKey:photo.partKey||'',category:photo.partKey?'finding':'vehicle'};
+   return {url:data.signedUrl,label:brokerPartName(photo.partKey),partKey:photo.partKey||'',category:photo.partKey==='__share_cover'?'preview':photo.partKey?'finding':'vehicle'};
   }));
   assertUnchanged();
   const snapshot={fields:before.fields,exterior:before.exterior,detail:before.detail,accidents:before.accidents,note:before.note,photos:signed};
@@ -6346,8 +6362,31 @@ function mountDealerReportCover(root,fields,photos,options){
  bar.append(button);
 })();
 </script>
+<script>
+var sharePreviewPhotoBusy=false;
+function renderSharePreviewPhoto(){
+ const box=document.getElementById('sharePreviewPhotoBox');if(!box)return;box.replaceChildren();
+ const photo=currentInspectionPhotos.find(p=>p.partKey==='__share_cover');
+ if(photo){const image=document.createElement('img');image.src=photo.dataUrl||photo.url||'';image.alt='공유 미리보기 사진';image.style.cssText='width:100%;max-width:320px;max-height:210px;object-fit:contain;border-radius:10px';box.append(image);}
+ else {const text=document.createElement('p');text.textContent='등록한 사진 한 장이 링크 미리보기에 표시됩니다. 미등록 시 기존 차량사진을 사용합니다.';box.append(text);}
+ const remove=document.getElementById('sharePreviewPhotoRemove');if(remove)remove.hidden=!photo;
+ document.querySelectorAll('[data-share-cover-control]').forEach(button=>button.disabled=sharePreviewPhotoBusy);
+}
+async function setSharePreviewPhoto(input){
+ const file=input.files?.[0];input.value='';if(!file||sharePreviewPhotoBusy)return;
+ if(!currentInspectionPhotos.some(p=>p.partKey==='__share_cover')&&currentInspectionPhotos.length>=60){alert('사진은 미리보기 사진을 포함해 최대 60장까지 저장할 수 있습니다.');return;}
+ const original=currentInspectionPhotos;sharePreviewPhotoBusy=true;renderSharePreviewPhoto();
+ try{const photo=await compressImageFile(file);if(currentInspectionPhotos!==original){alert('검차가 변경되어 사진 등록을 취소했습니다. 현재 검차에서 다시 선택해주세요.');return;}photo.partKey='__share_cover';currentInspectionPhotos=currentInspectionPhotos.filter(p=>p.partKey!=='__share_cover');currentInspectionPhotos.push(photo);renderInspectionPhotos();}
+ catch(error){alert('사진을 읽지 못했습니다. 다른 사진으로 다시 선택해주세요.');}
+ finally{sharePreviewPhotoBusy=false;renderSharePreviewPhoto();}
+}
+function removeSharePreviewPhoto(){if(sharePreviewPhotoBusy)return;currentInspectionPhotos=currentInspectionPhotos.filter(p=>p.partKey!=='__share_cover');renderInspectionPhotos();}
+
+renderSharePreviewPhoto();
+</script>
 </body>
 </html>
+
 
 
 

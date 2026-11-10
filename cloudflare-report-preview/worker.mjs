@@ -20,9 +20,12 @@ async function readReport(token,purchase=false){
  return data;
 }
 function firstVehiclePhoto(report){
- return (Array.isArray(report.photos)?report.photos:[]).find(p=>{
-  if(!p||p.partKey||p.category&&p.category!=='vehicle')return false;
-  if(!p.category&&p.label&&!['차량 전체 사진','차량사진'].includes(p.label))return false;
+ const photos=Array.isArray(report.photos)?report.photos:[];
+ const cover=photos.find(p=>p?.category==='preview'&&p.partKey==='__share_cover');
+ return (cover?[cover]:photos).find(p=>{
+  const isCover=p===cover;
+  if(!p||!isCover&&(p.partKey||p.category&&p.category!=='vehicle'))return false;
+  if(!isCover&&!p.category&&p.label&&!['차량 전체 사진','차량사진'].includes(p.label))return false;
   try{const url=new URL(p.url);return url.origin===PROJECT&&url.pathname.startsWith('/storage/v1/object/sign/inspection-photos/')&&!url.username&&!url.password}catch{return false}
  });
 }
@@ -60,4 +63,5 @@ export default {
   }catch(error){const reason=/^REPORT_HTTP_\d{3}$/.test(error?.message||'')?error.message:(error?.name==='TimeoutError'?'UPSTREAM_TIMEOUT':'UPSTREAM_FAILURE');return new Response('일시적으로 리포트를 불러오지 못했습니다. 잠시 후 다시 접속해주세요.',{status:503,headers:{...commonHeaders,'Content-Type':'text/plain; charset=utf-8','Retry-After':'30','X-DealerMate-Error':reason}})}
  }
 };
+
 
