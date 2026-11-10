@@ -6012,9 +6012,9 @@ let brokerShareBusy=false,brokerActiveShare=null,brokerShareRefreshRequest=0;
 function brokerShareUrl(token,vehicleNumber){
  if(!/^([0-9a-f]{32}|[0-9a-f]{64})$/.test(String(token||'')))return '';
  const base='https://dealermate-report.pages.dev';
- if(token.length===64)return base+'/r/'+token;
+ if(token.length===64)return base+'/r/'+token+'?v=2';
  const plate=String(vehicleNumber||'차량').replace(/[^0-9가-힣A-Za-z]/g,'').slice(0,32)||'차량';
- return base+'/r/'+encodeURIComponent(plate+'-'+token);
+ return base+'/r/'+encodeURIComponent(plate+'-'+token)+'?v=2';
 }
 function renderBrokerShare(data){
  const link=document.getElementById('brokerShareLink'),status=document.getElementById('brokerShareStatus');

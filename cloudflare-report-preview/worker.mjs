@@ -32,7 +32,7 @@ export default {
   if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405,headers:{...commonHeaders,Allow:'GET, HEAD'}});
   if(url.pathname==='/robots.txt')return new Response('User-agent: *\nAllow: /\n',{headers:commonHeaders});
   if(url.pathname==='/')return html('<!doctype html><html lang="ko"><meta charset="utf-8"><title>딜러메이트 공유 미리보기</title><h1>딜러메이트 공유 미리보기 준비 완료</h1><p>전달받은 차량리포트 링크로 접속해주세요.</p></html>');
-  const match=url.pathname.match(/^\/(r|image)\/([^/]+)$/),token=match?parseToken(match[2]):'';
+  const match=url.pathname.match(/^\/(r|image)\/([^/]+)$/),token=match?parseToken(match[1]==='image'?match[2].replace(/\.jpg$/,''):match[2]):'';
   if(!token)return unavailable(404);
   try{
    const data=await readReport(token);if(!data)return unavailable(410);
@@ -42,7 +42,8 @@ export default {
     const image=await fetch(photo.url,{redirect:'manual',signal:AbortSignal.timeout(20000)});
     const type=(image.headers.get('content-type')||'').split(';')[0].trim();
     if(!image.ok||!['image/jpeg','image/png','image/webp','image/gif','image/avif'].includes(type))return new Response(null,{status:404,headers:commonHeaders});
-    return new Response(request.method==='HEAD'?null:image.body,{headers:{...commonHeaders,'Content-Type':type}});
+    const headers={...commonHeaders,'Content-Type':type,'Content-Disposition':'inline; filename="vehicle.jpg"'};const length=image.headers.get('Content-Length');if(/^\d{1,9}$/.test(length||''))headers['Content-Length']=length;
+    return new Response(request.method==='HEAD'?null:image.body,{headers});
    }
    const fields=Array.isArray(report.fields)?report.fields:[];
    const value=label=>String(fields.find(f=>f?.label===label)?.value||'').slice(0,200);
@@ -50,8 +51,8 @@ export default {
    const description=['등급','연식·최초등록','주행거리','연료','판매가'].map(value).filter(v=>v&&v!=='미입력').join(' · ')||'차량 상태와 확인 사진을 차량리포트에서 확인하세요.';
    const canonical=new URL('/r/'+match[2],url.origin);const revision=url.searchParams.get('v');if(/^\d{1,17}$/.test(revision||''))canonical.searchParams.set('v',revision);
    const target=VIEWER+'#'+token;
-   const image=new URL('/image/'+token,url.origin);const updated=Date.parse(data.updatedAt||data.publishedAt||'');if(Number.isFinite(updated))image.searchParams.set('v',String(updated));
-   const body='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+escapeHtml(title)+'</title><meta name="description" content="'+escapeHtml(description)+'"><meta property="og:type" content="website"><meta property="og:site_name" content="딜러메이트"><meta property="og:locale" content="ko_KR"><meta property="og:title" content="'+escapeHtml(title)+'"><meta property="og:description" content="'+escapeHtml(description)+'"><meta property="og:url" content="'+escapeHtml(canonical.href)+'">'+(photo?'<meta property="og:image" content="'+escapeHtml(image.href)+'"><meta property="og:image:alt" content="'+escapeHtml(name+' 차량사진')+'">':'')+'<meta name="twitter:card" content="summary_large_image"></head><body><h1>'+escapeHtml(name||'차량리포트')+'</h1><p>'+escapeHtml(description)+'</p><p><a href="'+escapeHtml(target)+'">차량리포트 열기</a></p><script>location.replace('+JSON.stringify(target)+');</script></body></html>';
+   const image=new URL('/image/'+token+'.jpg',url.origin);const updated=Date.parse(data.updatedAt||data.publishedAt||'');if(Number.isFinite(updated))image.searchParams.set('v',String(updated)+'-2');
+   const body='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>'+escapeHtml(title)+'</title><meta name="description" content="'+escapeHtml(description)+'"><meta property="og:type" content="website"><meta property="og:site_name" content="딜러메이트"><meta property="og:locale" content="ko_KR"><meta property="og:title" content="'+escapeHtml(title)+'"><meta property="og:description" content="'+escapeHtml(description)+'"><meta property="og:url" content="'+escapeHtml(canonical.href)+'">'+(photo?'<meta property="og:image" content="'+escapeHtml(image.href)+'"><meta property="og:image:secure_url" content="'+escapeHtml(image.href)+'"><meta property="og:image:alt" content="'+escapeHtml(name+' 차량사진')+'">':'')+'<meta name="twitter:card" content="summary_large_image"></head><body><h1>'+escapeHtml(name||'차량리포트')+'</h1><p>'+escapeHtml(description)+'</p><p><a href="'+escapeHtml(target)+'">차량리포트 열기</a></p><script>location.replace('+JSON.stringify(target)+');</script></body></html>';
    return request.method==='HEAD'?new Response(null,{headers:{...commonHeaders,'Content-Type':'text/html; charset=utf-8'}}):html(body);
   }catch(error){const reason=/^REPORT_HTTP_\d{3}$/.test(error?.message||'')?error.message:(error?.name==='TimeoutError'?'UPSTREAM_TIMEOUT':'UPSTREAM_FAILURE');return new Response('일시적으로 리포트를 불러오지 못했습니다. 잠시 후 다시 접속해주세요.',{status:503,headers:{...commonHeaders,'Content-Type':'text/plain; charset=utf-8','Retry-After':'30','X-DealerMate-Error':reason}})}
  }
