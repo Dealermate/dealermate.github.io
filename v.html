@@ -133,6 +133,10 @@ body.dealer-report-page{background:#f2f5f6}
 .buyer-report.dealer-report .report-exterior-toolbar{max-width:540px}
 .buyer-report.dealer-report .report-exterior-map-legend{max-width:540px;font-size:11px;line-height:1.6;margin:8px auto 16px}
 @media print{.buyer-report.dealer-report .report-exterior-map-viewport.report-exterior-full,.buyer-report.dealer-report .report-exterior-map-viewport.report-exterior-full.expanded{height:auto;max-height:none;max-width:540px;aspect-ratio:1055 / 791;overflow:hidden}.buyer-report.dealer-report .report-exterior-full.expanded .report-exterior-map-plane{position:absolute;inset:3%;width:auto;height:auto;aspect-ratio:auto;margin:0}}
+
+.vehicle-quote-intro{padding:24px;background:#203c52;color:white;border-radius:12px;margin:4px 0 20px}.vehicle-quote-intro>span{font-size:12px;color:#c2d2dd}.vehicle-quote-intro>strong{display:block;font-size:32px;letter-spacing:-1px;margin:10px 0;overflow-wrap:anywhere}.vehicle-quote-intro small{font-size:16px;margin-left:5px}.vehicle-quote-intro p{font-size:12px;margin:0;color:#c2d2dd}.vehicle-quote-lines{margin:0}.vehicle-quote-lines>div{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #edf1f3}.vehicle-quote-lines dt{font-size:13px;color:#627580;line-height:1.5}.vehicle-quote-lines dd{margin:0;font-size:15px;font-weight:700;color:#233e52;white-space:nowrap;font-variant-numeric:tabular-nums}.vehicle-quote-lines .quote-subtotal{border-top:1px solid #c8d4dd;margin-top:12px}.vehicle-quote-lines .quote-grand{background:#eff5f8;padding:18px 14px;border-radius:10px;margin-top:12px}.vehicle-quote-lines .quote-grand dd{font-size:20px}.vehicle-quote-note,.vehicle-quote-empty{font-size:12px!important;color:#7b8d99;line-height:1.85;margin:18px 0 0}.broker-quote-help{grid-column:1/-1;font-size:12px;line-height:1.6;color:#81919d}.broker-quote-controls select{width:100%;padding:12px;border-radius:8px;border:1px solid #d7e0e8;background:var(--card-bg,#fff);color:var(--text-color,#24394b)}
+@media(max-width:520px){.vehicle-quote-intro{padding:20px}.vehicle-quote-intro>strong{font-size:29px}.vehicle-quote-lines dt{font-size:12px}.vehicle-quote-lines dd{font-size:14px}.vehicle-quote-lines .quote-grand dd{font-size:18px}}
+
 </style></head><body class="dealer-report-page"><main class="buyer-report"><header class="head buyer-report-header"><div class="brand"><img src="assets/dealer-mate-logo.webp" alt="">DEALER MATE · BUYER REPORT</div><div class="premium-cover"><div><h2 id="vehicleTitle">차량리포트</h2><p id="premiumVehicleSub">차량 상태와 확인 사진</p></div><div class="premium-price"><small>판매가</small><strong id="premiumSalePrice">미입력</strong></div></div><div id="reportMeta" class="meta"></div></header><div id="reportStatus" class="message" role="status">리포트를 불러오는 중입니다.</div><div id="reportActions" class="actions" hidden><button type="button" onclick="window.print()">인쇄 / PDF</button></div><div id="reportContent" class="content" hidden></div><footer class="foot">검차 시점에 확인한 내용을 기록한 리포트입니다. 미확인·확인불가 항목은 추가 확인이 필요합니다.</footer></main><dialog id="photoViewer" class="photo-fullscreen"><header><span id="expandedPhotoTitle">확인 사진</span><div><button type="button" onclick="document.getElementById('photoViewer').classList.toggle('zoomed')">확대 / 맞춤</button><button type="button" onclick="document.getElementById('photoViewer').close()">닫기</button></div></header><div class="photo-surface"><img id="expandedPhoto" alt="확인 사진" onclick="document.getElementById('photoViewer').classList.toggle('zoomed')"></div></dialog><script>
 const REPORT_API='https://crmeeegayzezeqhgkagx.supabase.co';
 const REPORT_KEY='sb_publishable_6wpAz2ELkD2Eh2ircwzVGw_78QKns9C';
@@ -157,6 +161,30 @@ function formatVehicleReportPrice(value){
  const won=Number(text.replace(/[,\s원]/g,''));
  return Number.isFinite(won)?(won/10000).toLocaleString('ko-KR',{maximumFractionDigits:4})+'만원':text;
 }
+
+/* Versioned quote inputs travel inside the existing public fields array. */
+const VEHICLE_QUOTE_FIELD='구매견적 산출정보';
+function calculateVehicleQuote(input){
+ if(!input||input.version!==1||!['general','light','truck'].includes(input.type)||!Number.isSafeInteger(input.price)||input.price<=0||input.price>1e12||!Number.isSafeInteger(input.insurance)||input.insurance<0||input.insurance>1e9||!/^\d{4}-\d{2}-\d{2}$/.test(input.asOf||''))return null;
+ const light=input.type==='light',rate=light?.04:input.type==='truck'?.05:.07;
+ const grossTax=Math.floor(input.price*Math.round(rate*100)/100),relief=light&&input.asOf<='2027-12-31'?Math.min(grossTax,750000):0,tax=grossTax-relief;
+ const bond=light?0:Math.floor(input.price/200),stamp=4000,mail=5000,saleFee=440000,reserve=light?0:100000,service=input.price<14000000?300000:Math.round(input.price*22/1000);
+ const raw=tax+bond+stamp+mail+saleFee+reserve+service+input.insurance,transfer=Math.floor(raw/10000)*10000;
+ return {...input,rate,grossTax,relief,tax,bond,stamp,mail,saleFee,reserve,service,rounding:transfer-raw,transfer,total:input.price+transfer};
+}
+function vehicleQuoteFromFields(fields){try{return calculateVehicleQuote(JSON.parse(fields.find(f=>f?.label===VEHICLE_QUOTE_FIELD)?.value||'null'))}catch{return null}}
+function vehicleQuoteRows(q){
+ const won=n=>n.toLocaleString('ko-KR')+'원';
+ return [['차량 판매가',won(q.price)],['취득세 ('+Math.round(q.rate*100)+'%)',won(q.tax)],...(q.relief?[['경차 취득세 감면 (취득세에 반영)','−'+won(q.relief)]]:[]),['지역개발공채 (기존 0.5% 기준)',q.type==='light'?'면제':won(q.bond)],['인·증지대',won(q.stamp)],['우편 등기료',won(q.mail)],['매도비',won(q.saleFee)],['성능보험료',won(q.insurance)],['매매 수수료 ('+(q.price<14000000?'1,400만원 미만 정액':'차량가의 2.2%')+')',won(q.service)],...(q.reserve?[['이전 예비금',won(q.reserve)]]:[]),['만원 단위 절사',won(q.rounding)],['이전비용 합계',won(q.transfer)],['총 구매 예상금액',won(q.total)]];
+}
+const VEHICLE_QUOTE_NOTE='판매가 기준의 비영업용 차량 예상 견적입니다. 취득세는 일반 7%·경차 4%·화물차 5%이며, 경차 75만원 감면은 2027년 12월 31일까지 반영합니다. 공채·수수료·예비금과 만원 단위 절사는 기존 이전비 산출 기준입니다. 실제 과세표준·감면·공채 비용에 따라 최종 정산액은 달라질 수 있습니다.';
+function vehicleQuoteMarkup(fields){
+ const q=vehicleQuoteFromFields(fields);
+ if(!q)return '<p class="vehicle-quote-empty">구매견적이 아직 작성되지 않았습니다. 판매가와 차량 구분을 입력한 후 리포트를 업데이트해주세요.</p>';
+ const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ return '<div class="vehicle-quote-intro"><span>차량 구매 예상비용</span><strong>'+q.total.toLocaleString('ko-KR')+'<small>원</small></strong><p>'+({general:'일반',light:'경차',truck:'화물차'})[q.type]+' · 산출 기준일 '+q.asOf+'</p></div><dl class="vehicle-quote-lines">'+vehicleQuoteRows(q).map(([label,value],i,items)=>'<div class="'+(i===items.length-1?'quote-grand':i===items.length-2?'quote-subtotal':'')+'"><dt>'+esc(label)+'</dt><dd>'+esc(value)+'</dd></div>').join('')+'</dl><p class="vehicle-quote-note">'+VEHICLE_QUOTE_NOTE+'</p>';
+}
+
 function renderBuyerReport(data){
  const report=data?.report;if(!report||typeof report!=='object')throw Error('리포트가 없습니다.');
  const expiry=new Date(data.expiresAt).getTime();if(!Number.isFinite(expiry)||expiry<=Date.now())throw Error('기간이 종료되었습니다.');reportExpiry=expiry;
@@ -165,7 +193,7 @@ function renderBuyerReport(data){
  const content=document.getElementById('reportContent');content.replaceChildren();
  const allRows=rows(report.detail),totals={normal:0,issue:0,unavailable:0,pending:0};allRows.forEach(r=>totals[Object.hasOwn(REPORT_STATES,r?.state)?r.state:'pending']++);
  const overview=node('div',undefined,'premium-overview'),overviewTitle=node('div',undefined,'premium-overview-title');overviewTitle.append(node('strong','검차 확인 요약'),node('span',(allRows.length-totals.pending)+' / '+allRows.length+' 항목 확인'));overview.append(overviewTitle);const metrics=node('div',undefined,'premium-metrics');[['normal','정상'],['issue','이상 기록'],['unavailable','확인불가'],['pending','미확인']].forEach(([key,label])=>{const metric=node('div',undefined,'premium-metric '+key);metric.append(node('strong',totals[key]),node('span',label));metrics.append(metric)});overview.append(metrics);
- const basic=section('01 차량 기본정보'),grid=node('div',undefined,'fields buyer-report-grid');fields.forEach(f=>{const item=node('div',undefined,/옵션/.test(f?.label||'')?'dealer-wide-field':'');item.append(node('b',f?.label||'정보'),node('span',f?.value||'미입력'));grid.append(item)});basic.append(grid);
+ const basic=section('01 차량 기본정보'),grid=node('div',undefined,'fields buyer-report-grid');fields.filter(f=>f.label!==VEHICLE_QUOTE_FIELD).forEach(f=>{const item=node('div',undefined,/옵션/.test(f?.label||'')?'dealer-wide-field':'');item.append(node('b',f?.label||'정보'),node('span',f?.value||'미입력'));grid.append(item)});basic.append(grid);
   section('02 종합 의견').append(node('div',report.note||'별도 의견 없음','note premium-summary-copy'));
  const photoSection=section('03 차량사진'),photos=node('div',undefined,'photos buyer-report-photos');rows(report.photos).filter(p=>p?.category==='vehicle'||(!p?.category&&!p?.partKey&&(!p?.label||p.label==='차량 전체 사진'||p.label==='차량사진'))).slice(0,60).forEach((p,i)=>{const fig=node('figure'),url=safePhotoUrl(p?.url),img=node('img');img.alt=p?.label||'확인 사진';img.loading='lazy';img.referrerPolicy='no-referrer';if(url){img.src=url;img.onerror=()=>{img.hidden=true;fig.prepend(node('p','사진을 불러오지 못했습니다. 담당자에게 다시 확인해주세요.','photo-error'))};img.onclick=()=>openBuyerPhoto(url,img.alt);img.setAttribute('role','button');img.tabIndex=0;img.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openBuyerPhoto(url,img.alt)}};fig.append(img)}else fig.append(node('p','사진을 표시할 수 없습니다.','photo-error'));fig.append(node('figcaption',(i+1)+'. '+(p?.label||'확인 사진')));photos.append(fig)});if(photos.children.length)photoSection.append(photos);else photoSection.append(node('p','등록된 외관·실내 차량사진이 없습니다.'));
  const exteriorSection=section('04 외관 상태'),exteriorHost=node('div',undefined,'report-exterior-map-host');exteriorSection.append(exteriorHost);
@@ -175,6 +203,7 @@ function renderBuyerReport(data){
  accident.append(diagram,node('p','X 교환 · W 판금 · 미표시 부위는 무사고를 확정하는 의미가 아닙니다.','report-accident-legend'));
  const guide=node('div',undefined,'report-coating-guide');guide.append(node('strong','도막수치 참고 기준'),node('p','70~150 μm 정상 예상 · 151~400 μm 단순도색 예상 · 400 μm 이상 판금도장 가능성 있음'),node('small','400 μm는 판금도장 가능성으로 표시합니다. (부위별 최고 측정값입니다.)'));accident.append(guide);
  const detail=section('06 세부상태');detail.append(overview);const groups=[...new Set(rows(report.detail).map(r=>r?.group||'세부상태'))];groups.forEach(group=>{const block=node('div',undefined,'buyer-detail-group');block.append(node('h4',group));stateRows(block,rows(report.detail).filter(r=>(r?.group||'세부상태')===group),report.photos);detail.append(block)});
+ const quoteBody=node('div',undefined,'vehicle-quote-body');quoteBody.innerHTML=vehicleQuoteMarkup(fields);section('07 구매견적서').append(quoteBody);
  document.getElementById('reportStatus').hidden=true;content.hidden=false;document.getElementById('reportActions').hidden=false;
  const reportRoot=document.querySelector('main.buyer-report');reportRoot.classList.remove('dealer-report-unavailable');mountDealerReportCover(reportRoot,fields,rows(report.photos).filter(p=>p?.category==='vehicle'||(!p?.category&&!p?.partKey&&(!p?.label||p.label==='차량 전체 사진'||p.label==='차량사진'))),{key:'viewer:'+location.hash,public:true,meta:document.getElementById('reportMeta').textContent,photoUrl:p=>safePhotoUrl(p?.url),openPhoto:(p,_i,url)=>openBuyerPhoto(url,p.label||'차량사진')});
  mountVehicleReportChapters(document.querySelector('main.buyer-report'),'viewer:'+location.hash);
