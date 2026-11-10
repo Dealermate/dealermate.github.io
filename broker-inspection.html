@@ -5570,7 +5570,7 @@ async function captureInspectionResult(){
     canvas.width=W;canvas.height=156+cards.reduce((h,card)=>h+card.height+26,0)+72;
     ctx.fillStyle='#f4f6fa';ctx.fillRect(0,0,W,canvas.height);
     ctx.fillStyle='#101b30';ctx.fillRect(0,0,W,124);
-    ctx.fillStyle='#fff';ctx.font='bold 40px sans-serif';ctx.fillText('딜러메이트 · 알선검차',PAD,61);
+    ctx.fillStyle='#fff';ctx.font='bold 40px sans-serif';ctx.fillText('딜러메이트 · 차량리포트',PAD,61);
     ctx.fillStyle='#a9bad5';ctx.font='24px sans-serif';ctx.fillText('차량 검차결과',PAD,100);
     ctx.textAlign='right';ctx.font='22px sans-serif';ctx.fillText(new Date().toLocaleString('ko-KR'),W-PAD,98);ctx.textAlign='left';
     let y=156;
@@ -5908,7 +5908,7 @@ function renderBrokerReport(){
  const groups=[...new Set(data.detail.map(r=>r.group||'세부상태'))];
  const details=groups.map(group=>'<div class="buyer-detail-group"><h4>'+e(group)+'</h4><div class="buyer-status-grid">'+data.detail.filter(r=>(r.group||'세부상태')===group).map(row).join('')+'</div></div>').join('');
  const sale=data.fields.find(f=>f.label==='판매가')?.value||'미입력';
- box.innerHTML=`<article class="buyer-report"><header class="buyer-report-header"><div class="premium-report-label"><img src="assets/dealer-mate-logo.webp" alt="">DEALER MATE · INSPECTION REPORT</div><div class="premium-cover"><div><h2>${e(document.getElementById('carName')?.value||'알선검차 리포트')}</h2><p>${e(document.getElementById('carNumber')?.value||'차량번호 미입력')} · ${e(document.getElementById('brokerDate')?.value||'검차일 미입력')}</p></div><div class="premium-price"><small>판매가</small><strong>${e(sale)}</strong></div></div></header>`+
+ box.innerHTML=`<article class="buyer-report"><header class="buyer-report-header"><div class="premium-report-label"><img src="assets/dealer-mate-logo.webp" alt="">DEALER MATE · INSPECTION REPORT</div><div class="premium-cover"><div><h2>${e(document.getElementById('carName')?.value||'차량리포트')}</h2><p>${e(document.getElementById('carNumber')?.value||'차량번호 미입력')} · ${e(document.getElementById('brokerDate')?.value||'검차일 미입력')}</p></div><div class="premium-price"><small>판매가</small><strong>${e(sale)}</strong></div></div></header>`+
  section('01 차량 기본정보',`<div class="buyer-report-grid">${data.fields.map(f=>`<div><b>${f.label}</b>${e(f.value)}</div>`).join('')}</div>`)+
  section('02 종합 의견',`<div class="premium-summary-copy">${e(data.note||'별도 의견 없음')}</div>`)+
  section('03 차량사진',vehiclePhotos.length?`<div class="buyer-report-photos">${vehiclePhotos.map((p,i)=>`<figure><img src="${e(p.dataUrl||p.url||'')}" alt="${e(brokerPartName(p.partKey))}" data-broker-photo="${data.photos.indexOf(p)}" role="button" tabindex="0"><figcaption>${i+1}. ${e(brokerPartName(p.partKey))}</figcaption></figure>`).join('')}</div>`:'<p>기본정보에서 외관·실내 차량사진을 추가해주세요.</p>')+
@@ -5956,7 +5956,7 @@ captureInspectionResult=async function(){
   ctx.textAlign='left';ctx.textBaseline='alphabetic';y=diagramY+diagramHeight+35;text('X 교환 · W 판금');text('미표시 부위는 무사고 확정이 아닙니다.','#6c7a8f');text('도막수치 참고 기준');text('70~150 μm 정상 예상 · 151~400 μm 단순도색 예상 · 400 μm 이상 판금도장 가능성 있음');text('400 μm는 판금도장 가능성으로 표시합니다. (부위별 최고 측정값입니다.)','#6c7a8f');
   title('06 세부상태');const detailCounts=data.detail.reduce((counts,row)=>(counts[row.state]=(counts[row.state]||0)+1,counts),{});text('검차 확인 요약 · 정상 '+(detailCounts.normal||0)+' / 이상 '+(detailCounts.issue||0)+' / 확인불가 '+(detailCounts.unavailable||0)+' / 미확인 '+(detailCounts.pending||0));data.detail.forEach(r=>{text('['+BROKER_STATE[r.state]+'] '+r.title,r.state==='issue'?'#b12f2f':'#34445d');if(r.memo)text('  '+r.memo)});
   text('미확인·확인불가 항목은 추가 확인이 필요합니다.','#6c7a8f');
-  const safe=sanitizeDownloadName(data.fields[0].value);for(let i=0;i<pages.length;i++){const c=pages[i],cctx=c.getContext('2d');cctx.fillStyle='#73829a';cctx.font='22px sans-serif';cctx.fillText('DEALER MATE · '+(i+1)+' / '+pages.length,P,H-38);const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));if(!blob)throw Error('리포트 이미지 생성 실패');await saveBlobToDevice(blob,'알선검차_'+safe+'_'+String(i+1).padStart(2,'0')+'.png');if(i<pages.length-1)await new Promise(resolve=>setTimeout(resolve,250))}
+  const safe=sanitizeDownloadName(data.fields[0].value);for(let i=0;i<pages.length;i++){const c=pages[i],cctx=c.getContext('2d');cctx.fillStyle='#73829a';cctx.font='22px sans-serif';cctx.fillText('DEALER MATE · '+(i+1)+' / '+pages.length,P,H-38);const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));if(!blob)throw Error('리포트 이미지 생성 실패');await saveBlobToDevice(blob,'차량리포트_'+safe+'_'+String(i+1).padStart(2,'0')+'.png');if(i<pages.length-1)await new Promise(resolve=>setTimeout(resolve,250))}
   alert('리포트 '+pages.length+'장을 저장했습니다.');
  }catch(error){console.error(error);alert('리포트 저장 실패: '+error.message)}finally{if(button)button.disabled=false}
 };
@@ -6272,7 +6272,7 @@ function mountDealerReportCover(root,fields,photos,options){
   const empty=dealerReportElement('div',undefined,'dealer-gallery-empty');empty.append(dealerReportElement('span','DEALER MATE','dealer-empty-wordmark'),dealerReportElement('strong','차량의 모습을 담아주세요'),dealerReportElement('p','등록한 외관·실내 사진이 여기에 표시됩니다.'));stage.append(empty);
  }
  gallery.append(stage,thumbs);card.append(gallery);
- const identity=dealerReportElement('div',undefined,'dealer-cover-identity'),eyebrow=dealerReportElement('div',undefined,'dealer-cover-eyebrow');eyebrow.append(dealerReportElement('span','VEHICLE INSPECTION'),dealerReportElement('span','알선검차','dealer-inspection-tag'));identity.append(eyebrow);
+ const identity=dealerReportElement('div',undefined,'dealer-cover-identity'),eyebrow=dealerReportElement('div',undefined,'dealer-cover-eyebrow');eyebrow.append(dealerReportElement('span','VEHICLE INSPECTION'),dealerReportElement('span','차량리포트','dealer-inspection-tag'));identity.append(eyebrow);
  const cover=dealerReportElement('div',undefined,'premium-cover'),copy=dealerReportElement('div'),heading=dealerReportElement('h2',title),grade=dealerReportElement('p',value('등급')==='미입력'?'차량 상태와 확인 사진':value('등급'),'dealer-cover-grade'),sub=dealerReportElement('p',value('차량번호'),'dealer-cover-number');if(options.public){heading.id='vehicleTitle';sub.id='premiumVehicleSub'}copy.append(heading,grade,sub);
  const price=dealerReportElement('div',undefined,'premium-price'),amount=dealerReportElement('strong',value('판매가'));if(options.public)amount.id='premiumSalePrice';price.append(dealerReportElement('small','판매가'),amount);cover.append(copy,price);identity.append(cover);
  const facts=dealerReportElement('dl',undefined,'dealer-key-facts');[['연식','연식·최초등록'],['주행거리','주행거리'],['연료','연료']].forEach(([label,field])=>{const cell=dealerReportElement('div');cell.append(dealerReportElement('dt',label),dealerReportElement('dd',value(field)));facts.append(cell)});identity.append(facts);
