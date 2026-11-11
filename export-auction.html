@@ -1,5 +1,5 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>수출 경매 분석 | 딜러메이트</title>
-<link rel="stylesheet" href="export-auction.css"><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script><script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script type="module" src="export-auction.mjs"></script></head>
+<link rel="stylesheet" href="export-auction.css"><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script><script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script type="module" src="export-auction.mjs?v=2"></script></head>
 <body><header><a href="index.html"><img src="assets/dealer-mate-logo.webp" alt="">딜러메이트</a><a href="index.html">업무 홈</a></header><main>
 <section class="hero"><small>DEALER MATE · AUCTION</small><h1>수출 경매 분석</h1><p>어떤 차량이 여러 회차에 걸쳐 수출 낙찰되는지 확인하세요.</p></section>
 <p id="status" role="status" aria-live="polite">로그인 상태 확인 중…</p>
@@ -16,6 +16,11 @@
 <label>주행거리<select id="km"><option value="">전체</option><option value="0">5만 km 미만</option><option value="1">5만~10만 km 미만</option><option value="2">10만~15만 km 미만</option><option value="3">15만~20만 km 미만</option><option value="4">20만 km 이상</option></select></label>
 <label>연료<select id="fuel"></select></label><label>사고 문자<select id="accident"></select></label><label>외판 문자<select id="panel"></select></label><label>색상<select id="color"></select></label>
 </div></section>
+<section class="card"><h2>회차별 가격 흐름</h2>
+<p>같은 차명·트림, 연식, 연료, 변속기, 평가등급, 2만 km 주행거리 구간끼리 낙찰가 중앙값을 비교합니다. 각 회차 3대 이상이고 회차 간격이 8일 이내일 때만 등락을 표시합니다.</p>
+<div class="filters"><label>낙찰 구분<select id="price-channel"><option>수출</option><option>내수</option></select></label><label>표시 기준<select id="price-signal"><option value="">비교 가능 차량</option><option value="down">하락 차량</option><option value="all">표본 부족 포함</option></select></label><label>상세 흐름<select id="price-series"></select></label></div>
+<h3>트림별 보정 흐름</h3><p>같은 트림에서 양쪽 회차에 모두 나온 조건만 비교합니다. 공통 표본이 3대 이상일 때 조건별 등락의 중앙값을 표시합니다.</p><div id="trim-signals"></div><h3>동일 조건 상세</h3><div id="price-history"></div><div id="price-signals"></div></section>
+<section class="card"><h2>매입 검토 후보</h2><p>최근 3회에 수출 낙찰이 있고, 공통 표본으로 비교한 두 번의 하락폭이 각각 3% 이내인 트림입니다. 3%는 초기 선별 기준이며, 표본이 부족하면 후보로 표시하지 않습니다.</p><div id="buy-candidates"></div></section>
 <section class="card"><h2>수출 안정성</h2><p>출품 대비 수출은 수출 낙찰 ÷ 출품, 낙찰 중 수출은 수출 ÷ (수출 + 내수)입니다. 회차 수가 적을 때는 장기 수요를 판단하기 어렵습니다.</p><div id="trend"></div><h3>세부 트림별 수출 반복</h3><div id="stability"></div></section>
 <section class="card"><h2>유사 수출 낙찰가</h2><p>세부 차명을 선택하면 연결이 확인된 수출 낙찰만 비교합니다. 가격은 만원 단위입니다.</p>
 <div class="filters"><label>비교할 차명<select id="comparable"></select></label><label>선택사양 검색<input id="option" type="search" placeholder="예: 어라운드뷰"></label></div>

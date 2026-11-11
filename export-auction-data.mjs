@@ -63,3 +63,56 @@ export function stats(lots,matched){
 }
 export const pct=(n,d)=>d? (n/d*100).toFixed(1)+'%':'—';
 export function quantile(nums,p){const a=[...nums].sort((x,y)=>x-y);if(!a.length)return null;const pos=(a.length-1)*p,i=Math.floor(pos);return a[i]+(a[Math.min(i+1,a.length-1)]-a[i])*(pos-i);}
+
+// Compare matched conditions, not the average of a changing vehicle mix.
+export function weeklyPriceSignals(results, calendar, channel='수출', minimum=3){
+ const days=[...new Set(calendar)].sort(),groups=new Map(), counts=new Map();
+ for(const row of results){const k=joinKey(row);counts.set(k,(counts.get(k)||0)+1);}
+ for(const row of results){
+  const d=row.data;
+  if(d.channel!==channel||!Number.isFinite(d.price)||d.price<=0||!d.grade||!d.fuel||counts.get(joinKey(row))!==1)continue;
+  const bucket=Math.floor(d.km/20000);
+  const key=JSON.stringify([compact(d.name),d.year,d.fuel,d.gear,d.grade,bucket]);
+  if(!groups.has(key))groups.set(key,{key,name:d.name,year:d.year,fuel:d.fuel,gear:d.gear,grade:d.grade,bucket,weeks:new Map()});
+  const g=groups.get(key);
+  if(!g.weeks.has(row.auction_day))g.weeks.set(row.auction_day,[]);
+  g.weeks.get(row.auction_day).push(d.price);
+ }
+ const out=[];
+ for(const g of groups.values()){
+  const history=days.map(day=>{const values=g.weeks.get(day)||[];return {day,n:values.length,median:values.length>=minimum?quantile(values,.5):null};});
+  const comparisons=history.map((now,i)=>{
+   const prev=history[i-1];const gap=prev?(Date.parse(now.day)-Date.parse(prev.day))/86400000:0;
+   return prev?.median!=null&&now.median!=null&&gap<=8?{change:now.median-prev.median,rate:(now.median-prev.median)/prev.median*100}:null;
+  });
+  const latest=history.at(-1),delta=comparisons.at(-1),prior=comparisons.at(-2);
+  const repeat=history.filter(x=>x.n>0).length;
+  const direction=!delta?'비교 보류':delta.rate<0&&prior?.rate<0?'2회 연속 하락':delta.rate<0?'하락':delta.rate>0?'상승':'보합';
+  const candidate=channel==='수출'&&delta!=null&&prior!=null&&delta.rate>=-3&&prior.rate>=-3;
+  out.push({...g,history,comparisons,latest,delta,repeat,direction,candidate});
+ }
+ return out.sort((a,b)=>Number(b.candidate)-Number(a.candidate)||b.repeat-a.repeat||b.latest.n-a.latest.n||a.name.localeCompare(b.name,'ko'));
+}
+
+export function trimPriceSignals(cohorts,minimum=3){
+ const groups=new Map();
+ for(const c of cohorts){const k=compact(c.name);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(c);}
+ return [...groups.values()].flatMap(cs=>{
+  const history=cs[0].history.map((week,i)=>{
+   const prev=cs[0].history[i-1];
+   if(!prev||(Date.parse(week.day)-Date.parse(prev.day))/86400000>8)return {day:week.day,n:0,rate:null};
+   const rates=[],changes=[];
+   for(const c of cs){const a=c.weeks.get(prev.day)||[],b=c.weeks.get(week.day)||[];
+    if(!a.length||!b.length)continue;
+    const before=quantile(a,.5),after=quantile(b,.5),weight=Math.min(a.length,b.length);
+    for(let j=0;j<weight;j++){rates.push((after-before)/before*100);changes.push(after-before);}
+   }
+   return {day:week.day,n:rates.length,rate:rates.length>=minimum?quantile(rates,.5):null,change:rates.length>=minimum?quantile(changes,.5):null};
+  });
+  const latest=history.at(-1),prior=history.at(-2);
+  if(latest.rate==null)return [];
+  return [{name:cs[0].name,latest,prior,history,repeat:cs[0].history.filter((_,i)=>cs.some(c=>c.history[i].n)).length,
+   direction:latest.rate<0&&prior?.rate<0?'2회 연속 하락':latest.rate<0?'하락':latest.rate>0?'상승':'보합',
+   candidate:prior?.rate!=null&&latest.rate>=-3&&prior.rate>=-3}];
+ }).sort((a,b)=>b.latest.n-a.latest.n||a.name.localeCompare(b.name,'ko'));
+}

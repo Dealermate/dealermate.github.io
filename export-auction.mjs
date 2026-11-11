@@ -1,4 +1,4 @@
-import {parseWorkbook,reconcile,stats,pct,quantile,norm} from './export-auction-data.mjs';
+import {parseWorkbook,reconcile,stats,pct,quantile,norm,weeklyPriceSignals,trimPriceSignals} from './export-auction-data.mjs?v=2';
 const el=id=>document.getElementById(id), make=(tag,value)=>{const e=document.createElement(tag);if(value!=null)e.textContent=value;return e;};
 const number=n=>n==null?'—':Number(n).toLocaleString('ko-KR',{maximumFractionDigits:1});
 const filters=['name','day','year','km','fuel','accident','panel','color'];
@@ -14,9 +14,35 @@ function table(id,head,rows,size=12){
  prev.onclick=()=>{page--;draw()};next.onclick=()=>{page++;draw()};nav.append(prev,label,next);if(total>1)host.append(nav);draw();
 }
 function options(id,values,empty='전체'){const s=el(id),prior=s.value;s.replaceChildren(new Option(empty,''),...values.map(v=>new Option(v,v)));if(values.includes(prior))s.value=prior;}
-function matches(row){const d=row.data;return norm(el('name').value).split(' ').every(k=>norm(d.name).includes(k))&&(!el('day').value||row.auction_day===el('day').value)&&['year','fuel','accident','panel','color'].every(k=>!el(k).value||String(d[k])===el(k).value)&&(!el('km').value||Math.min(4,Math.floor(d.km/50000))===Number(el('km').value));}
+function matches(row,ignoreDay=false){const d=row.data;return norm(el('name').value).split(' ').every(k=>norm(d.name).includes(k))&&(ignoreDay||!el('day').value||row.auction_day===el('day').value)&&['year','fuel','accident','panel','color'].every(k=>!el(k).value||String(d[k])===el(k).value)&&(!el('km').value||Math.min(4,Math.floor(d.km/50000))===Number(el('km').value));}
 function group(rows,key){const m=new Map();for(const r of rows){const k=key(r);if(!m.has(k))m.set(k,[]);m.get(k).push(r);}return m;}
 function roundCells(s){return [s.total,s.export,s.domestic,s.unsold,s.unknown,pct(s.export,s.total),pct(s.export,s.export+s.domestic)];}
+let shownSignals=[];
+const change=n=>n==null?'—':(n>0?'+':'')+number(n);
+const condition=x=>[x.year+'년',x.fuel,x.grade,(x.bucket*2)+'~'+((x.bucket+1)*2)+'만 km'].join(' · ');
+function renderHistory(){
+ const x=shownSignals.find(g=>g.key===el('price-series').value);
+ table('price-history',['경매일','낙찰 표본','중앙가(만원)','직전 회차 대비'],x?x.history.map((w,i)=>[w.day,w.n+'대',number(w.median),x.comparisons[i]?change(x.comparisons[i].rate)+'%':'—']):[]);
+}
+function renderSignals(){
+ const days=el('day').value?[...new Set(state.results.map(r=>r.auction_day))].filter(d=>d<=el('day').value):state.results.map(r=>r.auction_day);
+ const relevant=state.results.filter(r=>matches(r,true)&&(!el('day').value||r.auction_day<=el('day').value));
+ const signals=weeklyPriceSignals(relevant,days,el('price-channel').value);
+ const mode=el('price-signal').value;
+ shownSignals=signals.filter(x=>mode==='all'||(x.delta&&(mode!=='down'||x.delta.rate<0)));
+ const sel=el('price-series'),prior=sel.value;
+ sel.replaceChildren(new Option('차량 선택',''),...shownSignals.map(x=>new Option(x.name+' · '+condition(x),x.key)));
+ if(shownSignals.some(x=>x.key===prior))sel.value=prior;else if(shownSignals.length)sel.value=shownSignals[0].key;
+ renderHistory();
+ const cells=x=>[x.name,condition(x),x.direction,number(x.latest.median),change(x.delta?.change),x.delta?change(x.delta.rate)+'%':'—',x.latest.n+'대',x.repeat+'회'];
+ const heads=['차명·트림','비교 조건','흐름','최근 중앙가(만원)','증감(만원)','증감률','최근 표본','낙찰 발생'];
+ table('price-signals',heads,shownSignals.map(cells));
+ const trim=trimPriceSignals(signals), exportTrim=el('price-channel').value==='수출'?trim:trimPriceSignals(weeklyPriceSignals(relevant,days,'수출'));
+ const tHeads=['차명·트림','흐름','최근 증감(만원)','최근 증감률','직전 증감률','공통 표본','낙찰 발생'];
+ const tCells=x=>[x.name,x.direction,change(x.latest.change),change(x.latest.rate)+'%',x.prior?.rate==null?'—':change(x.prior.rate)+'%',x.latest.n+'대',x.repeat+'회'];
+ table('trim-signals',tHeads,trim.filter(x=>mode!=='down'||x.latest.rate<0).map(tCells));
+ table('buy-candidates',tHeads,exportTrim.filter(x=>x.candidate).map(tCells));
+}
 function render(){
  const {matched}=state,lots=state.listing.filter(matches),s=stats(lots,matched),rounds=group(lots,r=>JSON.stringify([r.auction_day,r.data.round]));
  el('metrics').replaceChildren(...[['출품',number(s.total)+'건'],['수출 낙찰',number(s.export)+'건'],['출품 대비 수출',pct(s.export,s.total)],['낙찰 중 수출',pct(s.export,s.export+s.domestic)]].map(([k,v])=>{const d=make('div');d.append(make('small',k),make('strong',v));return d;}));
@@ -26,7 +52,7 @@ function render(){
  table('stability',['차명·트림','수출 발생 / 출품 회차','수출 / 출품','출품 대비 수출','최저 회차 낙찰률','낙찰 중 수출'],models.map(x=>[x.label,x.repeat+' / '+x.rounds,x.total.export+' / '+x.total.total,pct(x.total.export,x.total.total),pct(x.low,1),pct(x.total.export,x.total.export+x.total.domestic)]));
  const peers=lots.flatMap(r=>{const v=matched.get(r.row_key);return v?.data.channel==='수출'?[v]:[];});
  options('comparable',[...new Set(peers.map(r=>r.data.name))].sort(),'차명 선택');
- renderPrices();
+ renderPrices();renderSignals();
  const review=state.review.filter(matches);el('review-count').textContent=number(review.length)+'건';table('review',['경매일','차명','연식','주행거리','구분','낙찰가(만원)','검토 사유'],review.map(r=>[r.auction_day,r.data.name,r.data.year,number(r.data.km),r.data.channel,number(r.data.price),r.reason]));
 }
 function renderPrices(){
@@ -66,6 +92,7 @@ el('import').onclick=async()=>{
  try{await load();}catch(e){el('status').textContent='등록은 완료됐지만 새로 조회하지 못했어요. 페이지를 새로고침해주세요.';}
  }catch(e){el('preview').textContent='등록하지 못했습니다. '+e.message;}finally{busy=false;el('file').disabled=false;el('import').disabled=!parsed;}
 };
+el('price-series').onchange=renderHistory;for(const id of ['price-channel','price-signal'])el(id).onchange=renderSignals;
 filters.forEach(id=>el(id).addEventListener('input',render));['comparable','option'].forEach(id=>el(id).addEventListener('input',renderPrices));
 async function start(){
  client=window.supabase.createClient('https://crmeeegayzezeqhgkagx.supabase.co','sb_publishable_6wpAz2ELkD2Eh2ircwzVGw_78QKns9C');
