@@ -6357,8 +6357,8 @@ function mountDealerReportCover(root,fields,photos,options){
 (function(){
  const bar=document.querySelector('.purchase-top-savebar,.broker-top-savebar');
  if(!bar||(!window.AndroidExternal&&!window.AndroidObd))return;
- const button=document.createElement('button');button.type='button';button.textContent=window.AndroidObd?'OBD 테스트 · v2':'OBD 테스트';button.style.cssText='padding:8px 10px;font-size:12px;white-space:nowrap';
- button.onclick=function(){if(window.AndroidObd&&typeof AndroidObd.open==='function')AndroidObd.open();else if(window.AndroidExternal&&typeof AndroidExternal.openObdTest==='function')AndroidExternal.openObdTest();else alert('설치된 앱에 OBD 기능이 없습니다. Google Drive에서 dealer-mate-obd-test-v2.apk를 내려받아 업데이트 설치해주세요. 앱 버전은 1.1-obd-test2입니다.');};
+ const button=document.createElement('button');button.type='button';button.textContent='OBD 테스트';try{if(window.AndroidObd&&typeof AndroidObd.getVersion==='function')button.textContent+=' · '+AndroidObd.getVersion().replace('OBD-TEST-','v');}catch(e){}button.style.cssText='padding:8px 10px;font-size:12px;white-space:nowrap';
+ button.onclick=function(){if(window.AndroidObd&&typeof AndroidObd.open==='function')AndroidObd.open();else if(window.AndroidExternal&&typeof AndroidExternal.openObdTest==='function')AndroidExternal.openObdTest();else alert('설치된 앱에 OBD 기능이 없습니다. Google Drive에서 딜러메이트.apk를 내려받아 업데이트 설치해주세요. 앱 버전은 1.1-obd-test3입니다.');};
  bar.append(button);
 })();
 </script>
