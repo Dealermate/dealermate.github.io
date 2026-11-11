@@ -1,0 +1,24 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>수출 경매 분석 | 딜러메이트</title>
+<link rel="stylesheet" href="export-auction.css"><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script><script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script type="module" src="export-auction.mjs"></script></head>
+<body><header><a href="index.html"><img src="assets/dealer-mate-logo.webp" alt="">딜러메이트</a><a href="index.html">업무 홈</a></header><main>
+<section class="hero"><small>DEALER MATE · AUCTION</small><h1>수출 경매 분석</h1><p>어떤 차량이 여러 회차에 걸쳐 수출 낙찰되는지 확인하세요.</p></section>
+<p id="status" role="status" aria-live="polite">로그인 상태 확인 중…</p>
+<section id="login" class="card" hidden><h2>로그인이 필요해요</h2><a href="index.html">업무 홈에서 로그인</a></section>
+<div id="workspace" hidden>
+<section class="card"><h2>경매 엑셀 등록</h2><p>전체경매현황과 브랜드별 낙찰 원본을 올려주세요. 회차는 파일 안의 경매일로 구분합니다.</p>
+<input type="file" id="file" accept=".xlsx" aria-label="경매 엑셀 선택"><button id="import" disabled>확인 후 등록</button>
+<p id="preview" role="status"></p><small>같은 파일이나 동일한 행은 다시 집계하지 않습니다. 기존 출품의 값이 바뀐 행은 덮어쓰지 않고 등록 결과에 표시합니다.</small>
+</section>
+<div id="metrics" class="metrics"></div>
+<section class="card"><h2>차량 조건</h2><div class="filters">
+<label>차명·세부 트림<input id="name" type="search" placeholder="예: 팰리세이드 프레스티지"></label>
+<label>경매일<select id="day"></select></label><label>연식<select id="year"></select></label>
+<label>주행거리<select id="km"><option value="">전체</option><option value="0">5만 km 미만</option><option value="1">5만~10만 km 미만</option><option value="2">10만~15만 km 미만</option><option value="3">15만~20만 km 미만</option><option value="4">20만 km 이상</option></select></label>
+<label>연료<select id="fuel"></select></label><label>사고 문자<select id="accident"></select></label><label>외판 문자<select id="panel"></select></label><label>색상<select id="color"></select></label>
+</div></section>
+<section class="card"><h2>수출 안정성</h2><p>출품 대비 수출은 수출 낙찰 ÷ 출품, 낙찰 중 수출은 수출 ÷ (수출 + 내수)입니다. 회차 수가 적을 때는 장기 수요를 판단하기 어렵습니다.</p><div id="trend"></div><h3>세부 트림별 수출 반복</h3><div id="stability"></div></section>
+<section class="card"><h2>유사 수출 낙찰가</h2><p>세부 차명을 선택하면 연결이 확인된 수출 낙찰만 비교합니다. 가격은 만원 단위입니다.</p>
+<div class="filters"><label>비교할 차명<select id="comparable"></select></label><label>선택사양 검색<input id="option" type="search" placeholder="예: 어라운드뷰"></label></div>
+<div id="prices"></div></section>
+<section class="card"><h2>매칭 검토 <span id="review-count"></span></h2><p>출품 원본이 없거나 후보가 여러 개인 낙찰 결과는 가격 비교에서 제외합니다.</p><div id="review"></div></section>
+</div></main></body></html>
