@@ -10,7 +10,7 @@ function table(id,head,rows,size=12){
  head.forEach(x=>h.append(make('th',x)));wrap.append(t);host.append(wrap);
  let page=0;const total=Math.ceil(rows.length/size),nav=make('div');nav.className='pager';
  const prev=make('button','이전'),next=make('button','다음'),label=make('span');
- function draw(){b.replaceChildren();for(const values of rows.slice(page*size,(page+1)*size)){const tr=make('tr');b.append(tr);for(const value of values)tr.append(make('td',value));}prev.disabled=page===0;next.disabled=page===total-1;label.textContent=(page+1)+' / '+total+' · '+number(rows.length)+'건';}
+ function draw(){b.replaceChildren();for(const values of rows.slice(page*size,(page+1)*size)){const tr=make('tr');b.append(tr);for(const value of values){const td=make('td');if(typeof value==='function')td.append(value());else td.textContent=value??'';tr.append(td);}}prev.disabled=page===0;next.disabled=page===total-1;label.textContent=(page+1)+' / '+total+' · '+number(rows.length)+'건';}
  prev.onclick=()=>{page--;draw()};next.onclick=()=>{page++;draw()};nav.append(prev,label,next);if(total>1)host.append(nav);draw();
 }
 function options(id,values,empty='전체'){const s=el(id),prior=s.value;s.replaceChildren(new Option(empty,''),...values.map(v=>new Option(v,v)));if(values.includes(prior))s.value=prior;}
@@ -43,21 +43,59 @@ function renderSignals(){
  table('trim-signals',tHeads,trim.filter(x=>mode!=='down'||x.latest.rate<0).map(tCells));
  table('buy-candidates',tHeads,exportTrim.filter(x=>x.candidate).map(tCells));
 }
+let activeTrim='',activeGrade=null,activeChannel='',visibleTrims=new Map();
+const gradeOf=r=>norm(r.data.grade).toUpperCase();
+function renderDrilldown(){
+ const host=el('stability-detail'),m=visibleTrims.get(activeTrim);host.hidden=!m;host.replaceChildren();if(!m)return;
+ const heading=make('h3',m.label+' · 등급별 낙찰 내역');heading.tabIndex=-1;host.append(heading);
+ const linked=m.rs.flatMap(lot=>{const result=state.matched.get(lot.row_key);return result?[{lot,result}]:[];});
+ const unmatched=state.review.filter(r=>norm(r.data.name)===activeTrim&&matches(r)).map(result=>({lot:null,result}));
+ const entries=[...linked,...unmatched];
+ const grades=[...new Set([...m.rs.map(gradeOf),...entries.map(e=>gradeOf(e.result))])].sort();
+ if(activeGrade===null||!grades.includes(activeGrade))activeGrade=grades.find(g=>entries.some(e=>gradeOf(e.result)===g))??grades[0];
+ const tabs=make('div');tabs.className='auction-grade-tabs';tabs.setAttribute('aria-label','평가등급');
+ for(const g of grades){
+  const n=entries.filter(e=>gradeOf(e.result)===g).length;
+  const b=make('button',(g||'등급 미기재')+' · '+n+'건');b.type='button';b.setAttribute('aria-pressed',String(g===activeGrade));
+  b.onclick=()=>{activeGrade=g;renderDrilldown();el('stability-detail').querySelector('[aria-pressed="true"]')?.focus();};tabs.append(b);
+ }
+ host.append(tabs);
+ const gradeRows=entries.filter(e=>gradeOf(e.result)===activeGrade);
+ const channelBar=make('div');channelBar.className='auction-grade-tabs auction-channel-tabs';channelBar.setAttribute('aria-label','낙찰 구분');
+ for(const c of ['','수출','내수']){
+  const b=make('button',c||'전체 낙찰');b.type='button';b.setAttribute('aria-pressed',String(c===activeChannel));
+  b.onclick=()=>{activeChannel=c;renderDrilldown();el('stability-detail').querySelector('.auction-channel-tabs [aria-pressed="true"]')?.focus();};channelBar.append(b);
+ }
+ host.append(channelBar);
+ const displayed=gradeRows.filter(e=>!activeChannel||e.result.data.channel===activeChannel).sort((a,b)=>b.result.auction_day.localeCompare(a.result.auction_day)||Number(!a.lot)-Number(!b.lot));
+ const verified=displayed.filter(e=>e.lot).length;
+ host.append(make('p','출품 연결 '+verified+'건 · 매칭 검토 '+(displayed.length-verified)+'건. 검토 건의 출품번호와 시작가는 확인되지 않아 표시하지 않습니다.'));
+ if(!displayed.length){host.append(make('p','이 등급의 낙찰가 원본이 없거나, 선택한 조건에 맞는 낙찰이 없습니다.'));return;}
+ const d=make('div');d.id='stability-auction-rows';host.append(d);
+ table(d.id,['경매일','회차','출품번호','평가등급','연식','주행거리(km)','연료','변속기','색상','구분','시작가(만원)','낙찰가(만원)','선택사양','사고 상세','차량 이력','비고','연결 상태'],
+ displayed.map(({lot,result:r})=>[r.auction_day,lot?.data.round||'—',lot?.data.lot||'—',r.data.grade||'—',r.data.year,number(r.data.km),r.data.fuel||'—',r.data.gear||'—',r.data.color||'—',r.data.channel,number(lot?.data.price),number(r.data.price),r.data.options||'—',r.data.accidentDetail||'—',r.data.history||'—',r.data.note||'—',lot?'연결 확인':r.reason]));
+}
+function trimButton(m){
+ const b=make('button',m.label+' ›');b.type='button';b.className='auction-trim-link';b.setAttribute('aria-controls','stability-detail');
+ b.onclick=()=>{if(activeTrim!==m.key){activeTrim=m.key;activeGrade=null;activeChannel='';}renderDrilldown();const d=el('stability-detail');d.scrollIntoView?.({block:'nearest'});d.querySelector('h3')?.focus({preventScroll:true});};return b;
+}
 function render(){
- const {matched}=state,lots=state.listing.filter(matches),s=stats(lots,matched),rounds=group(lots,r=>JSON.stringify([r.auction_day,r.data.round]));
+ const {matched}=state,lots=state.listing.filter(r=>matches(r)),s=stats(lots,matched),rounds=group(lots,r=>JSON.stringify([r.auction_day,r.data.round]));
  el('metrics').replaceChildren(...[['출품',number(s.total)+'건'],['수출 낙찰',number(s.export)+'건'],['출품 대비 수출',pct(s.export,s.total)],['낙찰 중 수출',pct(s.export,s.export+s.domestic)]].map(([k,v])=>{const d=make('div');d.append(make('small',k),make('strong',v));return d;}));
  table('trend',['경매일 · 회차','출품','수출','내수','유찰·재출품 등','미확정','출품 대비 수출','낙찰 중 수출','연결 수출 중앙가(만원)'],[...rounds.values()].sort((a,b)=>b[0].auction_day.localeCompare(a[0].auction_day)).map(r=>[r[0].data.round,...roundCells(stats(r,matched)),number(quantile(r.map(x=>matched.get(x.row_key)?.data).filter(x=>x?.channel==='수출').map(x=>x.price),.5))]));
- const models=[...group(lots,r=>norm(r.data.name)).values()].map(rs=>{const sub=[...group(rs,r=>JSON.stringify([r.auction_day,r.data.round])).values()].map(x=>stats(x,matched));const total=stats(rs,matched),repeat=sub.filter(x=>x.export).length,low=Math.min(...sub.map(x=>x.export/x.total));return {label:rs[0].data.name,total,repeat,rounds:sub.length,low};});
+ const models=[...group(lots,r=>norm(r.data.name)).values()].map(rs=>{const sub=[...group(rs,r=>JSON.stringify([r.auction_day,r.data.round])).values()].map(x=>stats(x,matched));const total=stats(rs,matched),repeat=sub.filter(x=>x.export).length,low=Math.min(...sub.map(x=>x.export/x.total));return {key:norm(rs[0].data.name),label:rs[0].data.name,rs,total,repeat,rounds:sub.length,low};});
  models.sort((a,b)=>b.repeat-a.repeat||b.total.export-a.total.export||b.low-a.low);
- table('stability',['차명·트림','수출 발생 / 출품 회차','수출 / 출품','출품 대비 수출','최저 회차 낙찰률','낙찰 중 수출'],models.map(x=>[x.label,x.repeat+' / '+x.rounds,x.total.export+' / '+x.total.total,pct(x.total.export,x.total.total),pct(x.low,1),pct(x.total.export,x.total.export+x.total.domestic)]));
+ visibleTrims=new Map(models.map(x=>[x.key,x]));
+ table('stability',['차명·트림','수출 발생 / 출품 회차','수출 / 출품','출품 대비 수출','최저 회차 낙찰률','낙찰 중 수출'],models.map(x=>[()=>trimButton(x),x.repeat+' / '+x.rounds,x.total.export+' / '+x.total.total,pct(x.total.export,x.total.total),pct(x.low,1),pct(x.total.export,x.total.export+x.total.domestic)]));
+ renderDrilldown();
  const peers=lots.flatMap(r=>{const v=matched.get(r.row_key);return v?.data.channel==='수출'?[v]:[];});
  options('comparable',[...new Set(peers.map(r=>r.data.name))].sort(),'차명 선택');
  renderPrices();renderSignals();
- const review=state.review.filter(matches);el('review-count').textContent=number(review.length)+'건';table('review',['경매일','차명','연식','주행거리','구분','낙찰가(만원)','검토 사유'],review.map(r=>[r.auction_day,r.data.name,r.data.year,number(r.data.km),r.data.channel,number(r.data.price),r.reason]));
+ const review=state.review.filter(r=>matches(r));el('review-count').textContent=number(review.length)+'건';table('review',['경매일','차명','연식','주행거리','구분','낙찰가(만원)','검토 사유'],review.map(r=>[r.auction_day,r.data.name,r.data.year,number(r.data.km),r.data.channel,number(r.data.price),r.reason]));
 }
 function renderPrices(){
  const name=el('comparable').value,host=el('prices');host.replaceChildren();if(!name){host.append(make('p','차명을 선택해 주세요.'));return;}
- const opt=norm(el('option').value),rs=state.listing.filter(matches).map(r=>state.matched.get(r.row_key)).filter(r=>r?.data.channel==='수출'&&norm(r.data.name)===norm(name)&&norm(r.data.options).includes(opt)).sort((a,b)=>b.auction_day.localeCompare(a.auction_day));
+ const opt=norm(el('option').value),rs=state.listing.filter(r=>matches(r)).map(r=>state.matched.get(r.row_key)).filter(r=>r?.data.channel==='수출'&&norm(r.data.name)===norm(name)&&norm(r.data.options).includes(opt)).sort((a,b)=>b.auction_day.localeCompare(a.auction_day));
  const ps=rs.map(r=>r.data.price);
  host.append(make('p',ps.length>=5?'표본 '+number(ps.length)+'건 · 중앙값 '+number(quantile(ps,.5))+'만원 · 중간 50% '+number(quantile(ps,.25))+'~'+number(quantile(ps,.75))+'만원':'표본 '+number(ps.length)+'건 · 5건 미만은 개별 사례만 표시합니다.'));
  const cohort=new Set(rs.map(r=>JSON.stringify([r.data.year,Math.floor(r.data.km/50000),r.data.fuel,r.data.grade,r.data.color])));
