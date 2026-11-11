@@ -1,4 +1,4 @@
-import {parseWorkbook,reconcile,stats,pct,quantile,norm,weeklyPriceSignals,trimPriceSignals} from './export-auction-data.mjs?v=2';
+import {parseWorkbook,reconcile,stats,pct,quantile,norm,weeklyPriceSignals,trimPriceSignals,focusModels,modelFamily} from './export-auction-data.mjs?v=4';
 const el=id=>document.getElementById(id), make=(tag,value)=>{const e=document.createElement(tag);if(value!=null)e.textContent=value;return e;};
 const number=n=>n==null?'—':Number(n).toLocaleString('ko-KR',{maximumFractionDigits:1});
 const filters=['name','day','year','km','fuel','accident','panel','color'];
@@ -14,10 +14,38 @@ function table(id,head,rows,size=12){
  prev.onclick=()=>{page--;draw()};next.onclick=()=>{page++;draw()};nav.append(prev,label,next);if(total>1)host.append(nav);draw();
 }
 function options(id,values,empty='전체'){const s=el(id),prior=s.value;s.replaceChildren(new Option(empty,''),...values.map(v=>new Option(v,v)));if(values.includes(prior))s.value=prior;}
-function matches(row,ignoreDay=false){const d=row.data;return norm(el('name').value).split(' ').every(k=>norm(d.name).includes(k))&&(ignoreDay||!el('day').value||row.auction_day===el('day').value)&&['year','fuel','accident','panel','color'].every(k=>!el(k).value||String(d[k])===el(k).value)&&(!el('km').value||Math.min(4,Math.floor(d.km/50000))===Number(el('km').value));}
+function matches(row,ignoreDay=false){const d=row.data;return (selectedFamily?modelFamily(d.name)===selectedFamily:norm(el('name').value).split(' ').every(k=>norm(d.name).includes(k)))&&(ignoreDay||!el('day').value||row.auction_day===el('day').value)&&['year','fuel','accident','panel','color'].every(k=>!el(k).value||String(d[k])===el(k).value)&&(!el('km').value||Math.min(4,Math.floor(d.km/50000))===Number(el('km').value));}
 function group(rows,key){const m=new Map();for(const r of rows){const k=key(r);if(!m.has(k))m.set(k,[]);m.get(k).push(r);}return m;}
 function roundCells(s){return [s.total,s.export,s.domestic,s.unsold,s.unknown,pct(s.export,s.total),pct(s.export,s.export+s.domestic)];}
-let shownSignals=[];
+let shownSignals=[],focusStatus='focus',focusData={days:[],items:[]},selectedFamily='';
+function renderFocus(){
+ const host=el('focus-list');host.replaceChildren();
+ el('focus-period').textContent=focusData.days.length?'등록된 경매일 '+focusData.days.join(' · ')+' · 수출 낙찰 기준':'브랜드별 낙찰 원본을 등록하면 차종을 골라볼 수 있어요.';
+ for(const b of el('focus-controls').querySelectorAll('button')){
+  b.setAttribute('aria-pressed',String(b.dataset.focus===focusStatus));
+  b.onclick=()=>{focusStatus=b.dataset.focus;renderFocus();};
+ }
+ const list=focusData.items.filter(x=>x.status===focusStatus);
+ if(!list.length){host.append(make('p',focusStatus==='focus'?'아직 반복 기준을 충족한 차종이 없어요. 다른 회차의 낙찰 원본을 등록해 주세요.':'이 구분에 표시할 차종이 없습니다.'));return;}
+ const limit=8;
+ const add=x=>{
+  const card=make('article');card.className='focus-model';
+  const title=make('h3',x.name),score=make('strong',x.n+'/'+focusData.days.length+'회 수출 · 최근 '+x.latest+'대');
+  const evidence=make('p','회차별 '+x.weekly.join(' → ')+'대 · 합계 '+x.total+'대');
+  const price=make('p',x.trend?'동일 조건 가격 '+change(x.trend.latest.rate)+'% · 비교 '+x.trend.latest.n+'대':'가격 비교 부족 · AH 확인 필요');
+  const pocket=x.pocket?make('small','자주 나온 조건: '+x.pocket.label+' · '+x.pocket.weeks+'회 '+x.pocket.count+'대'):null;
+  const b=make('button','이 차종 상세 보기');b.type='button';b.onclick=()=>{
+   selectedFamily=x.name;
+   for(const id of filters)el(id).value='';
+   el('name').value=x.name;el('advanced-auction').open=true;render();
+   el('advanced-auction').scrollIntoView?.({block:'start'});
+  };
+  card.append(title,score,evidence,price);if(pocket)card.append(pocket);card.append(b);host.append(card);
+ };
+ list.slice(0,limit).forEach(add);
+ if(list.length>limit){const more=make('button','나머지 '+(list.length-limit)+'개 보기');more.type='button';more.onclick=()=>{more.remove();list.slice(limit).forEach(add);};host.append(more);}
+}
+
 const change=n=>n==null?'—':(n>0?'+':'')+number(n);
 const condition=x=>[x.year+'년',x.fuel,x.grade,(x.bucket*2)+'~'+((x.bucket+1)*2)+'만 km'].join(' · ');
 function renderHistory(){
@@ -109,7 +137,7 @@ async function load(){
   const {data,error}=await client.from('export_auction_rows').select('kind,row_key,auction_day,data').eq('owner_id',owner).order('auction_day').order('kind').order('row_key').range(offset,offset+499);
   if(seq!==loadId)return;if(error)throw error;rows.push(...data);if(data.length<500)break;
  }
- state=reconcile(rows);
+ state=reconcile(rows);focusData=focusModels(state.results);renderFocus();
  options('day',[...new Set(rows.map(r=>r.auction_day))].sort().reverse());
  for(const k of ['year','fuel','accident','panel','color'])options(k,[...new Set(rows.map(r=>String(r.data[k]??'')).filter(Boolean))].sort());
  render();el('status').textContent=rows.length?'':'아직 등록한 원본이 없습니다. 파일을 선택해 주세요.';
@@ -131,7 +159,7 @@ el('import').onclick=async()=>{
  }catch(e){el('preview').textContent='등록하지 못했습니다. '+e.message;}finally{busy=false;el('file').disabled=false;el('import').disabled=!parsed;}
 };
 el('price-series').onchange=renderHistory;for(const id of ['price-channel','price-signal'])el(id).onchange=renderSignals;
-filters.forEach(id=>el(id).addEventListener('input',render));['comparable','option'].forEach(id=>el(id).addEventListener('input',renderPrices));
+filters.forEach(id=>el(id).addEventListener('input',()=>{if(id==='name')selectedFamily='';render();}));['comparable','option'].forEach(id=>el(id).addEventListener('input',renderPrices));
 async function start(){
  client=window.supabase.createClient('https://crmeeegayzezeqhgkagx.supabase.co','sb_publishable_6wpAz2ELkD2Eh2ircwzVGw_78QKns9C');
  client.auth.onAuthStateChange((_,session)=>{if(!session&&user){user=null;parsed=null;loadId++;selection++;el('workspace').hidden=true;el('login').hidden=false;el('status').textContent='다시 로그인해 주세요.';}});

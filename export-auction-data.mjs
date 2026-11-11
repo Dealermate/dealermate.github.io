@@ -116,3 +116,51 @@ export function trimPriceSignals(cohorts,minimum=3){
    candidate:prior?.rate!=null&&latest.rate>=-3&&prior.rate>=-3}];
  }).sort((a,b)=>b.latest.n-a.latest.n||a.name.localeCompare(b.name,'ko'));
 }
+
+// Explicit families only: unrecognized names never become a made-up model family.
+const families=[
+ ['현대',['그랜드스타렉스','스타렉스','싼타페','아반떼','쏘나타','그랜저','팰리세이드','스타리아','투싼','코나','베뉴','캐스퍼','포터','아이오닉','벨로스터','엑센트','i30','i40']],
+ ['기아',['쏘렌토','스포티지','카니발','셀토스','모하비','쏘울','스토닉','니로','봉고','모닝','레이','프라이드','포르테','스팅어','카렌스','카스타','K9','K8','K7','K5','K3','EV9','EV6','EV3']],
+ ['제네시스',['GV80','GV70','GV60','G90','G80','G70','EQ900']],
+ ['쉐보레',['트레일블레이저','트랙스','말리부','크루즈','스파크','올란도','캡티바','이쿼녹스','임팔라','타호']],
+ ['르노',['QM6','QM5','QM3','SM7','SM6','SM5','SM3','XM3']],
+ ['쌍용',['코란도','렉스턴','티볼리','토레스','액티언','카이런']],
+ ['KG모빌리티',['코란도','렉스턴','티볼리','토레스','액티언']]
+];
+export function modelFamily(name){
+ const text=norm(name);
+ for(const [brand,models] of families){
+  if(!text.startsWith(norm(brand)+' '))continue;
+  const body=text.slice(brand.length+1);
+  for(const model of models){
+   const token=norm(model);
+   if(/^[a-z0-9]+$/.test(token)?new RegExp('(^|[^a-z0-9])'+token+'(?![a-z0-9])').test(body):body.includes(token))return brand+' '+model;
+  }
+  return '';
+ }
+ return '';
+}
+export function focusModels(results){
+ const days=[...new Set(results.map(r=>r.auction_day))].sort().slice(-4);
+ const recent=results.filter(r=>days.includes(r.auction_day));
+ const counts=new Map(),models=new Map();
+ for(const r of recent){const k=joinKey(r);counts.set(k,(counts.get(k)||0)+1);}
+ for(const r of recent){
+  const name=modelFamily(r.data.name);if(!name||r.data.channel!=='수출'||counts.get(joinKey(r))!==1)continue;
+  if(!models.has(name))models.set(name,[]);models.get(name).push(r);
+ }
+ const signals=trimPriceSignals(weeklyPriceSignals(recent,days).flatMap(c=>{
+  const name=modelFamily(c.name);return name?[{...c,name}]:[];
+ }),5);
+ const prices=new Map(signals.map(x=>[x.name,x]));
+ return {days,items:[...models].map(([name,rows])=>{
+  const weekly=days.map(day=>rows.filter(r=>r.auction_day===day).length);
+  const n=weekly.filter(Boolean).length, latest=weekly.at(-1), total=rows.length, trend=prices.get(name);
+  const recurring=n>=3&&latest>=2&&total>=8;
+  const watch=recurring&&trend&&(trend.latest.rate<=-5||trend.direction==='2회 연속 하락');
+  const pockets=new Map();
+  for(const r of rows){const key=JSON.stringify([r.data.year,r.data.fuel]);if(!pockets.has(key))pockets.set(key,[]);pockets.get(key).push(r);}
+  const pocket=[...pockets].map(([k,v])=>({label:JSON.parse(k).filter(Boolean).join('년 · '),count:v.length,weeks:new Set(v.map(r=>r.auction_day)).size})).filter(x=>x.weeks>=2).sort((a,b)=>b.weeks-a.weeks||b.count-a.count)[0];
+  return {name,weekly,n,latest,total,trend,pocket,status:watch?'watch':recurring?'focus':'hold'};
+ }).sort((a,b)=>b.n-a.n||b.latest-a.latest||b.total-a.total||a.name.localeCompare(b.name,'ko'))};
+}

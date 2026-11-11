@@ -1,15 +1,20 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>수출 경매 분석 | 딜러메이트</title>
-<link rel="stylesheet" href="export-auction.css?v=3"><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script><script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script type="module" src="export-auction.mjs?v=3"></script></head>
+<link rel="stylesheet" href="export-auction.css?v=4"><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script><script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script type="module" src="export-auction.mjs?v=4"></script></head>
 <body><header><a href="index.html"><img src="assets/dealer-mate-logo.webp" alt="">딜러메이트</a><a href="index.html">업무 홈</a></header><main>
-<section class="hero"><small>DEALER MATE · AUCTION</small><h1>수출 경매 분석</h1><p>어떤 차량이 여러 회차에 걸쳐 수출 낙찰되는지 확인하세요.</p></section>
+<section class="hero"><small>DEALER MATE · AUCTION</small><h1>수출 경매 분석</h1><p>헤이딜러에서 먼저 볼 차종을 좁히고, 개별 매물은 AH에서 확인하세요.</p></section>
 <p id="status" role="status" aria-live="polite">로그인 상태 확인 중…</p>
 <section id="login" class="card" hidden><h2>로그인이 필요해요</h2><a href="index.html">업무 홈에서 로그인</a></section>
 <div id="workspace" hidden>
+<section class="card focus-panel"><h2>이번 주 먼저 볼 차종</h2>
+<p id="focus-period"></p><div id="focus-controls" class="auction-grade-tabs" aria-label="차종 구분">
+<button type="button" data-focus="focus" aria-pressed="true">먼저 보기</button><button type="button" data-focus="watch" aria-pressed="false">하락 관찰</button><button type="button" data-focus="hold" aria-pressed="false">표본 더 필요</button></div>
+<div id="focus-list"></div><details class="focus-method"><summary>어떤 기준으로 골랐나요?</summary><p>최근 등록된 최대 4개 경매일 중 3회 이상 수출 낙찰, 최근 회차 2대 이상, 기간 합계 8대 이상을 먼저 봅니다. 가격은 같은 조건이 양쪽 회차에 있는 표본 5대 이상으로 비교합니다. 최근 5% 이상 하락하거나 2회 연속 하락하면 관찰로 옮깁니다. 비교할 가격이 없으면 ‘가격 비교 부족’으로 표시합니다. 등록된 낙찰 파일과 인식 가능한 차종만 집계하며, 입찰 전에 AH에서 해당 매물을 확인하세요.</p></details>
+</section>
 <section class="card"><h2>경매 엑셀 등록</h2><p>전체경매현황과 브랜드별 낙찰 원본을 올려주세요. 회차는 파일 안의 경매일로 구분합니다.</p>
 <input type="file" id="file" accept=".xlsx" aria-label="경매 엑셀 선택"><button id="import" disabled>확인 후 등록</button>
 <p id="preview" role="status"></p><small>같은 파일이나 동일한 행은 다시 집계하지 않습니다. 기존 출품의 값이 바뀐 행은 덮어쓰지 않고 등록 결과에 표시합니다.</small>
 </section>
-<div id="metrics" class="metrics"></div>
+<details id="advanced-auction" class="card advanced-auction"><summary>상세 분석 · 등급별 낙찰 내역</summary><div id="metrics" class="metrics"></div>
 <section class="card"><h2>차량 조건</h2><div class="filters">
 <label>차명·세부 트림<input id="name" type="search" placeholder="예: 팰리세이드 프레스티지"></label>
 <label>경매일<select id="day"></select></label><label>연식<select id="year"></select></label>
@@ -26,4 +31,4 @@
 <div class="filters"><label>비교할 차명<select id="comparable"></select></label><label>선택사양 검색<input id="option" type="search" placeholder="예: 어라운드뷰"></label></div>
 <div id="prices"></div></section>
 <section class="card"><h2>매칭 검토 <span id="review-count"></span></h2><p>출품 원본이 없거나 후보가 여러 개인 낙찰 결과는 가격 비교에서 제외합니다.</p><div id="review"></div></section>
-</div></main></body></html>
+</details></div></main></body></html>
