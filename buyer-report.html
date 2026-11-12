@@ -194,7 +194,7 @@ function renderBuyerReport(data){
  const content=document.getElementById('reportContent');content.replaceChildren();
  const allRows=rows(report.detail),totals={normal:0,issue:0,unavailable:0,pending:0};allRows.forEach(r=>totals[Object.hasOwn(REPORT_STATES,r?.state)?r.state:'pending']++);
  const overview=node('div',undefined,'premium-overview'),overviewTitle=node('div',undefined,'premium-overview-title');overviewTitle.append(node('strong','검차 확인 요약'),node('span',(allRows.length-totals.pending)+' / '+allRows.length+' 항목 확인'));overview.append(overviewTitle);const metrics=node('div',undefined,'premium-metrics');[['normal','정상'],['issue','이상 기록'],['unavailable','확인불가'],['pending','미확인']].forEach(([key,label])=>{const metric=node('div',undefined,'premium-metric '+key);metric.append(node('strong',totals[key]),node('span',label));metrics.append(metric)});overview.append(metrics);
- const basic=section('01 차량 기본정보'),grid=node('div',undefined,'fields buyer-report-grid');fields.filter(f=>f.label!==VEHICLE_QUOTE_FIELD).forEach(f=>{const item=node('div',undefined,/옵션/.test(f?.label||'')?'dealer-wide-field':'');item.append(node('b',f?.label||'정보'),node('span',f?.value||'미입력'));grid.append(item)});basic.append(grid);
+ const basic=section('01 차량 기본정보'),grid=node('div',undefined,'fields buyer-report-grid');fields.filter(f=>f.label!==VEHICLE_QUOTE_FIELD&&f.label!=='OBD 진단').forEach(f=>{const item=node('div',undefined,/옵션/.test(f?.label||'')?'dealer-wide-field':'');item.append(node('b',f?.label||'정보'),node('span',f?.value||'미입력'));grid.append(item)});basic.append(grid);
   section('02 종합 의견').append(node('div',report.note||'별도 의견 없음','note premium-summary-copy'));
  const photoSection=section('03 차량사진'),photos=node('div',undefined,'photos buyer-report-photos');rows(report.photos).filter(p=>p?.category==='vehicle'||(!p?.category&&!p?.partKey&&(!p?.label||p.label==='차량 전체 사진'||p.label==='차량사진'))).slice(0,60).forEach((p,i)=>{const fig=node('figure'),url=safePhotoUrl(p?.url),img=node('img');img.alt=p?.label||'확인 사진';img.loading='lazy';img.referrerPolicy='no-referrer';if(url){img.src=url;img.onerror=()=>{img.hidden=true;fig.prepend(node('p','사진을 불러오지 못했습니다. 담당자에게 다시 확인해주세요.','photo-error'))};img.onclick=()=>openBuyerPhoto(url,img.alt);img.setAttribute('role','button');img.tabIndex=0;img.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openBuyerPhoto(url,img.alt)}};fig.append(img)}else fig.append(node('p','사진을 표시할 수 없습니다.','photo-error'));fig.append(node('figcaption',(i+1)+'. '+(p?.label||'확인 사진')));photos.append(fig)});if(photos.children.length)photoSection.append(photos);else photoSection.append(node('p','등록된 외관·실내 차량사진이 없습니다.'));
  const exteriorSection=section('04 외관 상태'),exteriorHost=node('div',undefined,'report-exterior-map-host');exteriorSection.append(exteriorHost);
@@ -205,6 +205,7 @@ function renderBuyerReport(data){
  const guide=node('div',undefined,'report-coating-guide');guide.append(node('strong','도막수치 참고 기준'),node('p','70~150 μm 정상 예상 · 151~400 μm 단순도색 예상 · 400 μm 이상 판금도장 가능성 있음'),node('small','400 μm는 판금도장 가능성으로 표시합니다. (부위별 최고 측정값입니다.)'));accident.append(guide);
  const detail=section('06 세부상태');detail.append(overview);const groups=[...new Set(rows(report.detail).map(r=>r?.group||'세부상태'))];groups.forEach(group=>{const block=node('div',undefined,'buyer-detail-group');block.append(node('h4',group));stateRows(block,rows(report.detail).filter(r=>(r?.group||'세부상태')===group),report.photos);detail.append(block)});
  const quoteBody=node('div',undefined,'vehicle-quote-body');quoteBody.innerHTML=vehicleQuoteMarkup(fields);section('07 구매견적서').append(quoteBody);
+ const obd=fields.find(f=>f?.label==='OBD 진단');if(obd?.value){const copy=node('p',String(obd.value).slice(0,12000),'note premium-summary-copy');copy.style.whiteSpace='pre-line';section('08 OBD 진단').append(copy);}
  document.getElementById('reportStatus').hidden=true;content.hidden=false;document.getElementById('reportActions').hidden=false;
  const reportRoot=document.querySelector('main.buyer-report');reportRoot.classList.remove('dealer-report-unavailable');mountDealerReportCover(reportRoot,fields,rows(report.photos).filter(p=>p?.category==='vehicle'||(!p?.category&&!p?.partKey&&(!p?.label||p.label==='차량 전체 사진'||p.label==='차량사진'))),{key:'viewer:'+location.hash,public:true,meta:document.getElementById('reportMeta').textContent,photoUrl:p=>safePhotoUrl(p?.url),openPhoto:(p,_i,url)=>openBuyerPhoto(url,p.label||'차량사진')});
  mountVehicleReportChapters(document.querySelector('main.buyer-report'),'viewer:'+location.hash);
@@ -381,6 +382,7 @@ function mountDealerReportCover(root,fields,photos,options){
 }
 
 </script></body></html>
+
 
 
 

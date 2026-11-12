@@ -2653,8 +2653,9 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 .purchase-top-savebar{position:sticky;top:8px;z-index:90;max-width:760px;margin:12px auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:1px solid #dce5f3;border-radius:12px;background:#fff;box-shadow:0 4px 16px #101b3010}.purchase-top-savebar strong{display:block;font-size:13px;color:#243e64}.purchase-top-savebar span{display:block;font-size:11px;color:#77869c}.purchase-top-savebar button{padding:10px 18px;border:0;border-radius:8px;background:#295fe8;color:#fff;font:inherit;font-weight:700;font-size:13px}.page-tabs{top:86px}.purchase-leave-dialog{width:min(430px,calc(100% - 28px));border:1px solid #dce4f1;border-radius:17px;background:#fff;color:#1b2b42;padding:24px}.purchase-leave-dialog::backdrop{background:#101b3090}.purchase-leave-dialog h2{font-size:19px;margin-top:0}.purchase-leave-dialog p{font-size:14px;line-height:1.7}.purchase-leave-dialog>div{display:flex;flex-direction:column;gap:9px}.purchase-leave-dialog button{padding:12px;border:1px solid #dce4ef;border-radius:9px;background:#f5f7fb;color:#314965;font:inherit;font-size:13px}.purchase-leave-dialog #purchaseLeaveSave{background:#295fe8;color:#fff;border-color:#295fe8}body.dark-mode .purchase-top-savebar{background:#18283f;border-color:#365174}body.dark-mode .purchase-top-savebar strong{color:#dce8fa}@media print{.purchase-top-savebar,.purchase-leave-dialog{display:none!important}}.purchase-share-dialog{width:min(520px,calc(100% - 28px));max-height:85dvh;overflow:auto;padding:22px;border:1px solid #dce4ef;border-radius:16px;background:#fff;color:#243e64}.purchase-share-dialog::backdrop{background:#101b3090}.purchase-share-dialog h2{font-size:19px;margin-top:0}.purchase-share-dialog p{font-size:13px;line-height:1.7}.purchase-share-dialog textarea{width:100%;min-height:85px;resize:vertical;font:12px/1.5 sans-serif;border:1px solid #dce4ef;border-radius:8px;padding:10px}.purchase-share-actions{display:flex;flex-wrap:wrap;gap:8px}.purchase-share-actions button,.purchase-share-close{padding:10px 13px;border:1px solid #dce4ef;border-radius:8px;background:#f1f5fb;color:#254b78;font:inherit;font-size:13px}.purchase-share-close{display:block;margin:0 0 10px auto}.purchase-share-note{color:#71839b}button:disabled{opacity:.55}@media print{.purchase-share-dialog{display:none!important}}
 .purchase-part-dialog{width:min(560px,calc(100% - 24px));max-height:85dvh;overflow:auto;border:1px solid #dce4ef;border-radius:15px;padding:20px;background:var(--card);color:var(--text)}.purchase-part-dialog::backdrop{background:#101b3099}.purchase-part-dialog h3{margin-top:0}.purchase-part-actions{display:flex;gap:8px;flex-wrap:wrap}.purchase-part-actions button,.purchase-part-dialog button{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card-2);color:var(--text);font:inherit}.purchase-part-photos,.purchase-detail-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.purchase-photo-thumb{display:block;width:100%;padding:0!important;border:0;overflow:hidden;border-radius:8px;background:transparent;cursor:zoom-in}.purchase-photo-thumb img{display:block;width:100%;height:125px;object-fit:contain}.purchase-part-photos>p{font-size:12px;color:var(--muted)}.purchase-finding-link{display:inline-block;margin:4px 0 4px 10px;padding:5px 9px;border:1px solid #c5d6ec;border-radius:6px;background:#edf3fc;color:#254b78;cursor:pointer;font:inherit;font-size:12px}.deduction-mark{padding:0;cursor:pointer}.purchase-photo-viewer{width:100vw;height:100dvh;max-width:none;max-height:none;padding:12px;margin:0;border:0;background:#101b30;color:white}.purchase-photo-viewer::backdrop{background:#101b30}.purchase-photo-viewer header{display:flex;justify-content:space-between;gap:12px;align-items:center;height:48px}.purchase-photo-viewer button{padding:8px 16px;background:#24416a;color:white;border:0;border-radius:8px}.purchase-photo-viewer img{width:100%;height:calc(100% - 50px);object-fit:contain}.photo-item>small{display:block;font-size:10px;color:var(--muted)}@media print{.purchase-part-dialog,.purchase-photo-viewer,.purchase-finding-link{display:none!important}}
 .purchase-paint-note{margin:14px 0;padding:14px 16px;border:1px solid var(--line);border-radius:9px;background:var(--card-2);font-size:12px}.purchase-paint-note .result-empty{margin:0;line-height:1.8}.purchase-paint-note-title{font-weight:800;color:var(--text)}.purchase-paint-note dl{margin:9px 0}.purchase-paint-rate{display:grid;grid-template-columns:80px 1fr;gap:10px}.purchase-paint-rate dd{margin:0;font-weight:700}.purchase-paint-current{border-top:1px solid var(--line);padding-top:8px;color:var(--muted)}</style>
+<link rel="stylesheet" href="inspection-obd.css?v=1">
 </head>
-<body>
+<body data-obd-kind="purchase">
 <div id="photoSourceOverlay" class="photo-source-overlay" hidden>
   <div class="photo-source-sheet" role="dialog" aria-modal="true" aria-labelledby="photoSourceTitle">
     <div class="photo-source-handle"></div>
@@ -2717,6 +2718,7 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 <button class="page-tab" data-page="3" onclick="showPage(3)">세부상태</button>
 <button class="page-tab" data-page="4" onclick="showPage(4)">검수리포트</button>
 <button class="page-tab" data-page="5" onclick="showPage(5)">저장목록</button>
+<button class="page-tab" data-page="6" onclick="showPage(6)">OBD 진단</button>
 </div>
 <!-- 가격 + 검수리포트 -->
 <div class="section page-panel active" data-page-panel="0">
@@ -3157,6 +3159,15 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 </div>
 <div class="detail-navigation"><button type="button" id="detailPrev" onclick="moveDetailBatch(-1)">← 이전</button><span id="detailBatchText" aria-live="polite"></span><button type="button" id="detailNext" onclick="moveDetailBatch(1)">다음 항목 →</button></div><div id="detailEmpty" class="detail-empty" hidden>해당 항목이 없어요.</div><p id="detailReviewHint" class="detail-review-hint"></p></div>
 <!-- 검수리포트 -->
+<section class="section page-panel" data-page-panel="6">
+ <h2><i class="fa-solid fa-car-battery"></i> OBD 진단</h2>
+ <p class="obd-intro">차량 전원을 켜고 OBD 어댑터를 연결해주세요. 차량에서 표준 OBD 저장 고장코드를 읽어 검차에 남깁니다.</p>
+ <input type="hidden" id="inspectionObd">
+ <div id="obdState" class="obd-result"><small>저장 고장코드 조회</small><strong id="obdResult"></strong><p id="obdTime"></p></div>
+ <div class="obd-actions"><button type="button" class="record-btn primary" id="obdStart">OBD 진단 시작</button><button type="button" class="record-btn" id="obdRemove" hidden>기록 지우기</button></div>
+ <p id="obdStatus" class="obd-status" role="status"></p>
+ <p class="obd-intro">조회 범위에 한한 결과입니다. 코드가 없어도 차량 전체가 정상이라는 뜻은 아닙니다.</p>
+</section>
 <div class="section page-panel" data-page-panel="4">
 <h2><i class="fa-solid fa-clipboard-check"></i> 검수리포트</h2>
 <div class="result-area" id="resultArea" style="display:none;"></div>
@@ -3859,7 +3870,8 @@ function initCoating(){
     }
 
     function loadInputs(){
-      const baseKeys=['bidPriceInput','carNumber','mileage','carName','carGrade','exteriorCount','wheelScratchCount','spareKey','tireCount','repair','carAdvantage','Memo'];
+      document.getElementById('inspectionObd').value=localStorage.getItem('inspectionObd')||'';window.refreshInspectionObd?.();
+      const baseKeys=['bidPriceInput','carNumber','mileage','carName','carGrade','exteriorCount','wheelScratchCount','spareKey','tireCount','repair','carAdvantage','Memo','inspectionObd'];
       baseKeys.forEach(id=>{
         const el=document.getElementById(id);
         if(el && localStorage.getItem(id)) el.value=localStorage.getItem(id);
@@ -4099,6 +4111,7 @@ function deductionDiagramHtml(kind){
     function renderResultBox({selectedPaint, selectedAccidents, deductionLines, paintLines=[], accidentLines=[], detailLines=[], totalDiscount, finalPrice, paintSetoff}){
       const box = document.getElementById('resultArea');
       const hasAny = (
+        inspectionObdRows().length ||
         coatingLines().length ||
         selectedPaint.length ||
         selectedAccidents.length ||
@@ -4187,6 +4200,8 @@ function deductionDiagramHtml(kind){
 
         <div class="result-grid">
           <div class="result-meta">
+            ${inspectionObdRows().length ? `<div class="result-card"><h3>OBD 진단</h3><ul class="result-list">${inspectionObdRows().map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
+
 
             <div class="result-card">
               <h3><i class="fa-solid fa-car-side"></i> 차량 정보</h3>
@@ -4373,6 +4388,8 @@ function deductionDiagramHtml(kind){
       // 1. 현재 불러온 저장기록과 연결 해제
       //    다음 저장 시 기존 기록 수정이 아니라 "새 기록"으로 생성됨
       // -----------------------------------------------------
+      window.invalidateInspectionObd?.();
+      document.getElementById("inspectionObd").value="";window.refreshInspectionObd?.();
       localStorage.removeItem('activeInspectionRecordId');
 
       // -----------------------------------------------------
@@ -4392,6 +4409,7 @@ function deductionDiagramHtml(kind){
         'repair',
         'carAdvantage',
         'Memo',
+        'inspectionObd',
         'checkboxStates',
         'dynamicExtraItems',
         'currentPage'
@@ -4522,7 +4540,7 @@ function deductionDiagramHtml(kind){
 
     // ===== 페이지 이동 =====
     let currentPage = 0;
-    const PAGE_COUNT = 6;
+    const PAGE_COUNT = 7;
     function showPage(page, scrollTop=true){
       cancelCoatingHold();
       currentPage = Math.max(0, Math.min(PAGE_COUNT-1, Number(page)||0));
@@ -4544,6 +4562,7 @@ function deductionDiagramHtml(kind){
       if(currentPage === 5 && typeof renderSavedRecords === 'function'){
         renderSavedRecords();
       }
+      if(currentPage===6)window.refreshInspectionObd?.();
       if(scrollTop) window.scrollTo({top:0,behavior:'smooth'});
     }
     function changePage(delta){ showPage(currentPage+delta); }
@@ -4855,6 +4874,16 @@ function uuidForInspection(){
   return 'inspection-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 }
 
+function inspectionObdRows(raw=document.getElementById('inspectionObd')?.value){
+ try{
+  if(typeof raw!=='string'||!raw||raw.length>10000)return [];
+  const {codes,time}=JSON.parse(raw);
+  if(!Array.isArray(codes)||codes.length>1024||codes.some(c=>typeof c!=='string'||!/^[PCBU][0-3][0-9A-F]{3}$/.test(c))||!Number.isFinite(time)||time<=0||time>8640000000000000)return [];
+  const when=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'}).format(time);
+  return [codes.length?'저장 고장코드 '+codes.length+'개 · '+codes.join(', '):'조회 범위에서 저장 고장코드 없음','조회 시각: '+when+' (한국시간)','표준 OBD 조회 범위에 한함 · 차량 전체 정상 여부는 별도 확인'];
+ }catch(e){return [];}
+}
+
 function captureInspectionWorkspace(){
   saveExtraItems();
   saveCheckboxState();
@@ -4862,7 +4891,7 @@ function captureInspectionWorkspace(){
   const baseKeys=[
     'bidPriceInput','carNumber','mileage','carName','carGrade',
     'exteriorCount','wheelScratchCount','spareKey','tireCount',
-    'repair','carAdvantage','Memo'
+    'repair','carAdvantage','Memo','inspectionObd'
   ];
 
   const base={};
@@ -4894,10 +4923,11 @@ function captureInspectionWorkspace(){
 }
 
 function restoreInspectionWorkspace(workspace){
+  window.invalidateInspectionObd?.();localStorage.removeItem('inspectionObd');
   const keepTheme=localStorage.getItem('calculatorTheme');
 
   const base=workspace?.base||{};
-  ['bidPriceInput','carNumber','mileage','carName','carGrade','exteriorCount','wheelScratchCount','spareKey','tireCount','repair','carAdvantage','Memo'].forEach(key=>{localStorage.setItem(key,String(base[key]??''));const input=document.getElementById(key);if(input)input.value=String(base[key]??'')});
+  ['bidPriceInput','carNumber','mileage','carName','carGrade','exteriorCount','wheelScratchCount','spareKey','tireCount','repair','carAdvantage','Memo','inspectionObd'].forEach(key=>{localStorage.setItem(key,String(base[key]??''));const input=document.getElementById(key);if(input)input.value=String(base[key]??'')});
   document.querySelectorAll('.function-price,.function-desc').forEach(input=>{if(input.dataset.key)localStorage.removeItem(input.dataset.key);input.value=''});
   Object.entries(base).forEach(([key,value])=>{
     localStorage.setItem(key,String(value??''));
@@ -5900,7 +5930,7 @@ let purchaseSavedFingerprint=null,purchaseGuardReady=false,purchaseAllowLeave=fa
 const purchasePhotoDraftIds=new WeakMap();let purchasePhotoDraftSequence=0;
 function purchaseGuardPhotoRows(photos){return (photos||[]).map(photo=>{let draft='';if(photo.dataUrl&&!photo.path){if(!purchasePhotoDraftIds.has(photo))purchasePhotoDraftIds.set(photo,++purchasePhotoDraftSequence);draft=String(purchasePhotoDraftIds.get(photo))}return {name:photo.name||'photo.jpg',partKey:photo.partKey||'',path:photo.path||'',draft}})}
 function purchaseCurrentFingerprint(){return purchaseWorkspaceFingerprint({workspace:captureInspectionWorkspace(),photos:purchaseGuardPhotoRows(currentInspectionPhotos)})}
-function purchaseHasContent(){return ['carNumber','mileage','carName','carGrade','repair','carAdvantage','Memo'].some(id=>(document.getElementById(id)?.value||'').trim())||['bidPriceInput','exteriorCount','wheelScratchCount','tireCount'].some(id=>Number(document.getElementById(id)?.value||0)!==0)||(document.getElementById('spareKey')?.value==='없음')||currentInspectionPhotos.length>0||Object.keys(coatingData).length>0||detailCards().some(card=>detailStatus(card)!=='pending')||[...document.querySelectorAll('.acc-item')].some(pin=>pin.dataset.state)||[...document.querySelectorAll('.part-item')].some(pin=>pin.classList.contains('selected'))}
+function purchaseHasContent(){return ['carNumber','mileage','carName','carGrade','repair','carAdvantage','Memo','inspectionObd'].some(id=>(document.getElementById(id)?.value||'').trim())||['bidPriceInput','exteriorCount','wheelScratchCount','tireCount'].some(id=>Number(document.getElementById(id)?.value||0)!==0)||(document.getElementById('spareKey')?.value==='없음')||currentInspectionPhotos.length>0||Object.keys(coatingData).length>0||detailCards().some(card=>detailStatus(card)!=='pending')||[...document.querySelectorAll('.acc-item')].some(pin=>pin.dataset.state)||[...document.querySelectorAll('.part-item')].some(pin=>pin.classList.contains('selected'))}
 function purchaseIsDirty(){if(purchaseSavedFingerprint===null)return !!purchaseHasContent();return purchaseCurrentFingerprint()!==purchaseSavedFingerprint}
 function markPurchaseSavedRecord(record){if(!record)return;purchaseSavedFingerprint=purchaseWorkspaceFingerprint({workspace:record.workspace,photos:purchaseGuardPhotoRows(record.photos)});updatePurchaseSaveIndicator()}
 function updatePurchaseSaveIndicator(){if(!purchaseGuardReady)return;const status=document.getElementById('purchaseTopSaveStatus');if(status)status.textContent=purchaseSaveInFlight?'저장 중…':purchaseIsDirty()?'변경사항 있음':'저장됨';const button=document.getElementById('purchaseTopSave');if(button)button.disabled=!!purchaseSaveInFlight}
@@ -6106,15 +6136,7 @@ document.addEventListener('click',event=>{const pin=event.target.closest('[data-
 <p id="detailAddError" role="alert"></p>
 <div class="detail-add-actions"><button type="button" onclick="document.getElementById('detailAddDialog').close()">취소</button><button type="submit">추가</button></div>
 </form></dialog>
-<dialog id="purchaseLeaveDialog" class="purchase-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="purchaseLeaveMessage"></p><div><button id="purchaseLeaveSave" type="button" onclick="decidePurchaseLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelPurchaseLeave()">계속 작성</button><button type="button" onclick="decidePurchaseLeave(false)">저장 없이 나가기</button></div></dialog><dialog id="purchaseShareDialog" class="purchase-share-dialog" aria-labelledby="purchaseShareTitle"><button class="purchase-share-close" type="button" onclick="document.getElementById('purchaseShareDialog').close()">닫기</button><h2 id="purchaseShareTitle">검수리포트 공유</h2><p id="purchaseShareStatus" role="status" aria-live="polite"></p><label for="purchaseShareLink">열람 링크</label><textarea id="purchaseShareLink" readonly></textarea><p class="purchase-share-note">서버에 저장한 리포트를 약 7일간 열람할 수 있습니다. 새 링크를 만들면 같은 차량의 이전 링크는 종료되며, 공유 해제로 즉시 닫을 수 있습니다.</p><div class="purchase-share-actions"><button id="purchaseShareCreate" type="button" onclick="createPurchaseShare()">새 링크 만들기</button><button id="purchaseShareRevoke" type="button" onclick="revokePurchaseShare()" disabled>공유 해제</button><button id="purchaseShareCopy" type="button" onclick="copyPurchaseShareLink()">링크 복사</button><button id="purchaseShareSend" type="button" onclick="sendPurchaseShareLink()">다른 앱으로 링크 공유</button><button id="purchaseShareImages" type="button" onclick="sharePurchaseImages()">페이지 이미지 준비</button></div><details id="purchaseShareSetup" hidden><summary>최초 공유 설정 안내</summary><p>Supabase SQL Editor에서 <a href="https://github.com/Dealermate/dealermate.github.io/blob/main/purchase_report_sharing.sql" target="_blank" rel="noopener noreferrer">매입검차 공유 설정 SQL</a>을 한 번 실행해주세요.</p></details></dialog><dialog id="purchasePartDialog" class="purchase-part-dialog"><h3 id="purchasePartTitle"></h3><div class="purchase-part-actions"><button id="purchasePartToggle" type="button" onclick="togglePurchasePart()"></button><button class="purchase-photo-edit" type="button" onclick="choosePurchasePartPhoto('camera')">사진 촬영</button><button class="purchase-photo-edit" type="button" onclick="choosePurchasePartPhoto('album')">앨범 추가</button><button type="button" onclick="document.getElementById('purchasePartDialog').close()">닫기</button></div><div id="purchasePartPhotos" class="purchase-part-photos"></div></dialog><dialog id="purchasePhotoViewer" class="purchase-photo-viewer"><header><span id="purchasePhotoTitle"></span><button type="button" onclick="document.getElementById('purchasePhotoViewer').close()">닫기</button></header><img id="purchasePhotoImage" alt="부위 확인 사진"></dialog><script>
-(function(){
- const bar=document.querySelector('.purchase-top-savebar,.broker-top-savebar');
- if(!bar||(!window.AndroidExternal&&!window.AndroidObd))return;
- const button=document.createElement('button');button.type='button';button.textContent='OBD 테스트';try{if(window.AndroidObd&&typeof AndroidObd.getVersion==='function')button.textContent+=' · '+AndroidObd.getVersion().replace('OBD-TEST-','v');}catch(e){}button.style.cssText='padding:8px 10px;font-size:12px;white-space:nowrap';
- button.onclick=function(){if(window.AndroidObd&&typeof AndroidObd.open==='function')AndroidObd.open();else if(window.AndroidExternal&&typeof AndroidExternal.openObdTest==='function')AndroidExternal.openObdTest();else alert('설치된 앱에 OBD 기능이 없습니다. Google Drive에서 딜러메이트.apk를 내려받아 업데이트 설치해주세요. 앱 버전은 1.1-obd-test3입니다.');};
- bar.append(button);
-})();
-</script>
+<dialog id="purchaseLeaveDialog" class="purchase-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="purchaseLeaveMessage"></p><div><button id="purchaseLeaveSave" type="button" onclick="decidePurchaseLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelPurchaseLeave()">계속 작성</button><button type="button" onclick="decidePurchaseLeave(false)">저장 없이 나가기</button></div></dialog><dialog id="purchaseShareDialog" class="purchase-share-dialog" aria-labelledby="purchaseShareTitle"><button class="purchase-share-close" type="button" onclick="document.getElementById('purchaseShareDialog').close()">닫기</button><h2 id="purchaseShareTitle">검수리포트 공유</h2><p id="purchaseShareStatus" role="status" aria-live="polite"></p><label for="purchaseShareLink">열람 링크</label><textarea id="purchaseShareLink" readonly></textarea><p class="purchase-share-note">서버에 저장한 리포트를 약 7일간 열람할 수 있습니다. 새 링크를 만들면 같은 차량의 이전 링크는 종료되며, 공유 해제로 즉시 닫을 수 있습니다.</p><div class="purchase-share-actions"><button id="purchaseShareCreate" type="button" onclick="createPurchaseShare()">새 링크 만들기</button><button id="purchaseShareRevoke" type="button" onclick="revokePurchaseShare()" disabled>공유 해제</button><button id="purchaseShareCopy" type="button" onclick="copyPurchaseShareLink()">링크 복사</button><button id="purchaseShareSend" type="button" onclick="sendPurchaseShareLink()">다른 앱으로 링크 공유</button><button id="purchaseShareImages" type="button" onclick="sharePurchaseImages()">페이지 이미지 준비</button></div><details id="purchaseShareSetup" hidden><summary>최초 공유 설정 안내</summary><p>Supabase SQL Editor에서 <a href="https://github.com/Dealermate/dealermate.github.io/blob/main/purchase_report_sharing.sql" target="_blank" rel="noopener noreferrer">매입검차 공유 설정 SQL</a>을 한 번 실행해주세요.</p></details></dialog><dialog id="purchasePartDialog" class="purchase-part-dialog"><h3 id="purchasePartTitle"></h3><div class="purchase-part-actions"><button id="purchasePartToggle" type="button" onclick="togglePurchasePart()"></button><button class="purchase-photo-edit" type="button" onclick="choosePurchasePartPhoto('camera')">사진 촬영</button><button class="purchase-photo-edit" type="button" onclick="choosePurchasePartPhoto('album')">앨범 추가</button><button type="button" onclick="document.getElementById('purchasePartDialog').close()">닫기</button></div><div id="purchasePartPhotos" class="purchase-part-photos"></div></dialog><dialog id="purchasePhotoViewer" class="purchase-photo-viewer"><header><span id="purchasePhotoTitle"></span><button type="button" onclick="document.getElementById('purchasePhotoViewer').close()">닫기</button></header><img id="purchasePhotoImage" alt="부위 확인 사진"></dialog>
 <script>
 var sharePreviewPhotoBusy=false;
 function renderSharePreviewPhoto(){
@@ -6137,8 +6159,10 @@ function removeSharePreviewPhoto(){if(sharePreviewPhotoBusy)return;currentInspec
 
 renderSharePreviewPhoto();
 </script>
+<script src="inspection-obd.js?v=1" defer></script>
 </body>
 </html>
+
 
 
 

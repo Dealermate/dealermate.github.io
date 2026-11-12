@@ -2794,8 +2794,9 @@ body.dealer-report-page{background:#f2f5f6}
 @media(max-width:520px){.vehicle-quote-intro{padding:20px}.vehicle-quote-intro>strong{font-size:29px}.vehicle-quote-lines dt{font-size:12px}.vehicle-quote-lines dd{font-size:14px}.vehicle-quote-lines .quote-grand dd{font-size:18px}}
 
 </style>
+<link rel="stylesheet" href="inspection-obd.css?v=1">
 </head>
-<body>
+<body data-obd-kind="broker">
 <div id="photoSourceOverlay" class="photo-source-overlay" hidden>
   <div class="photo-source-sheet" role="dialog" aria-modal="true" aria-labelledby="photoSourceTitle">
     <div class="photo-source-handle"></div>
@@ -2855,6 +2856,7 @@ body.dealer-report-page{background:#f2f5f6}
 <button class="page-tab" data-page="3" onclick="showPage(3)">세부상태</button>
 <button class="page-tab" data-page="4" onclick="showPage(4)">차량리포트</button>
 <button class="page-tab" data-page="5" onclick="showPage(5)">저장목록</button>
+<button class="page-tab" data-page="6" onclick="showPage(6)">OBD 진단</button>
 </div>
 <!-- 가격 + 검차결과 -->
 <input id="bidPriceInput" type="hidden" value="0">
@@ -3233,6 +3235,15 @@ body.dealer-report-page{background:#f2f5f6}
 </div>
 <div class="detail-navigation"><button type="button" id="detailPrev" onclick="moveDetailBatch(-1)">← 이전</button><span id="detailBatchText" aria-live="polite"></span><button type="button" id="detailNext" onclick="moveDetailBatch(1)">다음 항목 →</button></div><div id="detailEmpty" class="detail-empty" hidden>해당 항목이 없어요.</div><p id="detailReviewHint" class="detail-review-hint"></p></div>
 <!-- 검차결과 -->
+<section class="section page-panel" data-page-panel="6">
+ <h2><i class="fa-solid fa-car-battery"></i> OBD 진단</h2>
+ <p class="obd-intro">차량 전원을 켜고 OBD 어댑터를 연결해주세요. 차량에서 표준 OBD 저장 고장코드를 읽어 검차에 남깁니다.</p>
+ <input type="hidden" id="inspectionObd">
+ <div id="obdState" class="obd-result"><small>저장 고장코드 조회</small><strong id="obdResult"></strong><p id="obdTime"></p></div>
+ <div class="obd-actions"><button type="button" class="record-btn primary" id="obdStart">OBD 진단 시작</button><button type="button" class="record-btn" id="obdRemove" hidden>기록 지우기</button></div>
+ <p id="obdStatus" class="obd-status" role="status"></p>
+ <p class="obd-intro">조회 범위에 한한 결과입니다. 코드가 없어도 차량 전체가 정상이라는 뜻은 아닙니다.</p>
+</section>
 <div class="section page-panel" data-page-panel="4">
 <h2><i class="fa-solid fa-clipboard-check"></i> 차량리포트</h2>
 <div class="result-area" id="resultArea" style="display:none;"></div>
@@ -3932,7 +3943,8 @@ function initCoating(){
     }
 
     function loadInputs(){
-      const baseKeys=['bidPriceInput','carNumber','mileage','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerDate','brokerInspector','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote','exteriorCount','wheelScratchCount','spareKey','tireCount','repair','carAdvantage','Memo'];
+      document.getElementById('inspectionObd').value=brokerStorage.getItem('inspectionObd')||'';window.refreshInspectionObd?.();
+      const baseKeys=['bidPriceInput','carNumber','mileage','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerDate','brokerInspector','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote','exteriorCount','wheelScratchCount','spareKey','tireCount','repair','carAdvantage','Memo','inspectionObd'];
       baseKeys.forEach(id=>{
         const el=document.getElementById(id);
         if(el && brokerStorage.getItem(id)){
@@ -4301,7 +4313,7 @@ function initCoating(){
     function startNewInspection(){
 
       const hasCurrentData = [
-        'carNumber','mileage','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerDate','brokerInspector','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote','bidPriceInput'
+        'carNumber','mileage','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerDate','brokerInspector','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote','inspectionObd','bidPriceInput'
       ].some(id => (document.getElementById(id)?.value || '').trim());
 
       if(hasCurrentData){
@@ -4316,6 +4328,8 @@ function initCoating(){
       // 1. 현재 불러온 저장기록과 연결 해제
       //    다음 저장 시 기존 기록 수정이 아니라 "새 기록"으로 생성됨
       // -----------------------------------------------------
+      window.invalidateInspectionObd?.();
+      document.getElementById("inspectionObd").value="";window.refreshInspectionObd?.();
       brokerStorage.removeItem('activeInspectionRecordId');
     if(typeof renderBrokerShare==='function')renderBrokerShare(null);
 
@@ -4336,6 +4350,7 @@ function initCoating(){
         'repair',
         'carAdvantage',
         'Memo',
+        'inspectionObd',
         'checkboxStates',
         'dynamicExtraItems',
         'currentPage'
@@ -4467,7 +4482,7 @@ function initCoating(){
 
     // ===== 페이지 이동 =====
     let currentPage = 0;
-    const PAGE_COUNT = 6;
+    const PAGE_COUNT = 7;
     function showPage(page, scrollTop=true){
       cancelCoatingHold();
       currentPage = Math.max(0, Math.min(PAGE_COUNT-1, Number(page)||0));
@@ -4489,6 +4504,7 @@ function initCoating(){
       if(currentPage === 5 && typeof renderSavedRecords === 'function'){
         renderSavedRecords();
       }
+      if(currentPage===6)window.refreshInspectionObd?.();
       if(scrollTop) window.scrollTo({top:0,behavior:'smooth'});
     }
     function changePage(delta){ showPage(currentPage+delta); }
@@ -4801,6 +4817,16 @@ function uuidForInspection(){
   return 'inspection-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 }
 
+function inspectionObdRows(raw=document.getElementById('inspectionObd')?.value){
+ try{
+  if(typeof raw!=='string'||!raw||raw.length>10000)return [];
+  const {codes,time}=JSON.parse(raw);
+  if(!Array.isArray(codes)||codes.length>1024||codes.some(c=>typeof c!=='string'||!/^[PCBU][0-3][0-9A-F]{3}$/.test(c))||!Number.isFinite(time)||time<=0||time>8640000000000000)return [];
+  const when=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'}).format(time);
+  return [codes.length?'저장 고장코드 '+codes.length+'개 · '+codes.join(', '):'조회 범위에서 저장 고장코드 없음','조회 시각: '+when+' (한국시간)','표준 OBD 조회 범위에 한함 · 차량 전체 정상 여부는 별도 확인'];
+ }catch(e){return [];}
+}
+
 function captureInspectionWorkspace(){
   saveExtraItems();
   saveCheckboxState();
@@ -4808,7 +4834,7 @@ function captureInspectionWorkspace(){
   const baseKeys=[
     'bidPriceInput','carNumber','mileage','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerDate','brokerInspector','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote',
     'exteriorCount','wheelScratchCount','spareKey','tireCount',
-    'repair','carAdvantage','Memo'
+    'repair','carAdvantage','Memo','inspectionObd'
   ];
 
   const base={};
@@ -4842,6 +4868,7 @@ function captureInspectionWorkspace(){
 }
 
 function restoreInspectionWorkspace(workspace){
+  window.invalidateInspectionObd?.();brokerStorage.removeItem('inspectionObd');
   const keepTheme=brokerStorage.getItem('calculatorTheme');
 
   brokerStorage.setItem('exteriorNotes',JSON.stringify(workspace?.exteriorNotes||{}));
@@ -5923,6 +5950,7 @@ function brokerReportSections(){
  const exterior=DATA.partNames.map(p=>{const n=brokerExteriorNotes[p.key]||{state:'pending',memo:''};return {key:p.key,top:p.top,left:p.left,title:brokerPartName(p.key),state:BROKER_STATE[n.state]?n.state:'pending',stateLabel:brokerExteriorStatusLabel(p.key,n),memo:n.memo||''}});
  const detail=detailCards().map(card=>{const cb=card.querySelector('input[type=checkbox]');return {group:DETAIL_GROUPS[Number(card.closest('.function-category').dataset.detailGroup)]?.title||'세부상태',key:'detail:'+cb.dataset.name,title:DETAIL_PROMPTS[cb.dataset.name]?.[0]||cb.dataset.name,state:detailStatus(card),memo:card.querySelector('.function-desc')?.value.trim()||''}});
  const accidents=[...document.querySelectorAll('.acc-item')].filter(p=>p.dataset.state||coatingData[p.dataset.key]).map(p=>{const part=DATA.accidentParts.find(item=>item.key===p.dataset.key);return {key:p.dataset.key,top:part?.top,left:part?.left,measurement:coatingData[p.dataset.key]?.peak?{value:coatingData[p.dataset.key].peak.value,material:coatingData[p.dataset.key].peak.material}:null,state:p.dataset.state,mark:({exchange:'X',repair:'W','disclosed-exchange':'XX','disclosed-repair':'WW'})[p.dataset.state]||'',title:coatingName(p.dataset.key),value:({exchange:'교환 X',repair:'판금 W','disclosed-exchange':'고지된 교환 XX','disclosed-repair':'고지된 판금 WW'})[p.dataset.state]||'기록 있음'}});
+ const obd=inspectionObdRows();if(obd.length)fields.push({label:'OBD 진단',value:obd.join('\n')});
  return {fields,exterior,detail,accidents,note:document.getElementById('brokerNote')?.value.trim()||'',photos:currentInspectionPhotos};
 }
 
@@ -5964,13 +5992,14 @@ function renderBrokerReport(){
  const details=groups.map(group=>'<div class="buyer-detail-group"><h4>'+e(group)+'</h4><div class="buyer-status-grid">'+data.detail.filter(r=>(r.group||'세부상태')===group).map(row).join('')+'</div></div>').join('');
  const sale=data.fields.find(f=>f.label==='판매가')?.value||'미입력';
  box.innerHTML=`<article class="buyer-report"><header class="buyer-report-header"><div class="premium-report-label"><img src="assets/dealer-mate-logo.webp" alt="">DEALER MATE · INSPECTION REPORT</div><div class="premium-cover"><div><h2>${e(document.getElementById('carName')?.value||'차량리포트')}</h2><p>${e(document.getElementById('carNumber')?.value||'차량번호 미입력')} · ${e(document.getElementById('brokerDate')?.value||'검차일 미입력')}</p></div><div class="premium-price"><small>판매가</small><strong>${e(sale)}</strong></div></div></header>`+
- section('01 차량 기본정보',`<div class="buyer-report-grid">${data.fields.filter(f=>f.label!==VEHICLE_QUOTE_FIELD).map(f=>`<div><b>${f.label}</b>${e(f.value)}</div>`).join('')}</div>`)+
+ section('01 차량 기본정보',`<div class="buyer-report-grid">${data.fields.filter(f=>f.label!==VEHICLE_QUOTE_FIELD&&f.label!=='OBD 진단').map(f=>`<div><b>${f.label}</b>${e(f.value)}</div>`).join('')}</div>`)+
  section('02 종합 의견',`<div class="premium-summary-copy">${e(data.note||'별도 의견 없음')}</div>`)+
  section('03 차량사진',vehiclePhotos.length?`<div class="buyer-report-photos">${vehiclePhotos.map((p,i)=>`<figure><img src="${e(p.dataUrl||p.url||'')}" alt="${e(brokerPartName(p.partKey))}" data-broker-photo="${data.photos.indexOf(p)}" role="button" tabindex="0"><figcaption>${i+1}. ${e(brokerPartName(p.partKey))}</figcaption></figure>`).join('')}</div>`:'<p>기본정보에서 외관·실내 차량사진을 추가해주세요.</p>')+
  section('04 외관 상태','<div class="report-exterior-map-host"></div>')+
  section('05 교환·판금 확인',brokerAccidentDiagram(data.accidents))+
  section('06 세부상태',overview+details)+
  section('07 구매견적서',vehicleQuoteMarkup(data.fields))+
+ (data.fields.find(f=>f.label==='OBD 진단')?section('08 OBD 진단','<p class="obd-report-copy">'+e(data.fields.find(f=>f.label==='OBD 진단').value)+'</p>'):'')+
  '<footer class="buyer-report-foot">검차 시점에 확인한 내용을 기록한 리포트입니다. 미확인·확인불가 항목은 추가 확인이 필요합니다.</footer></article>';
  mountVehicleExteriorMap(box.querySelector('.report-exterior-map-host'),data.exterior,data.photos,{key:'editor',photoUrl:p=>p.dataUrl||p.url||'',openPhoto:(_p,index)=>openBrokerPhoto(index)});
  mountDealerReportCover(box.querySelector('.buyer-report'),data.fields,vehiclePhotos,{key:'editor',photoUrl:p=>p.dataUrl||p.url||'',openPhoto:p=>openBrokerPhoto(data.photos.indexOf(p))});
@@ -5987,7 +6016,8 @@ captureInspectionResult=async function(){
   function page(){canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;ctx=canvas.getContext('2d');ctx.fillStyle='#f4f6fa';ctx.fillRect(0,0,W,H);ctx.fillStyle='#101b30';ctx.fillRect(0,0,W,135);ctx.fillStyle='#fff';ctx.font='bold 38px sans-serif';ctx.fillText('딜러메이트 · 차량리포트',P,65);ctx.font='24px sans-serif';ctx.fillStyle='#b9cbe5';ctx.fillText(data.fields[0].value+' · '+data.fields[1].value,P,108);y=182;pages.push(canvas)}
   function text(value,color='#34445d',bold=false){const chars=Array.from(String(value)),lines=[];let line='';ctx.font=(bold?'bold ':'')+'27px sans-serif';for(const c of chars){if(c==='\n'||(line&&ctx.measureText(line+c).width>W-P*2-30)){lines.push(line);line=c==='\n'?'':c}else line+=c}if(line)lines.push(line);for(const l of lines){if(y>H-100)page();ctx.font=(bold?'bold ':'')+'27px sans-serif';ctx.fillStyle=color;ctx.fillText(l,P+15,y);y+=42}}
   function title(label){if(y>H-180)page();y+=20;ctx.fillStyle='#e5edfb';ctx.fillRect(P,y-28,W-P*2,57);text(label,'#295fe8',true);y+=22}
-  page();title('01 차량 기본정보');data.fields.filter(f=>f.label!==VEHICLE_QUOTE_FIELD).forEach(f=>text(f.label+': '+f.value));
+  page();title('01 차량 기본정보');data.fields.filter(f=>f.label!==VEHICLE_QUOTE_FIELD&&f.label!=='OBD 진단').forEach(f=>text(f.label+': '+f.value));
+  const obd=data.fields.find(f=>f.label==='OBD 진단');if(obd){title('OBD 진단');text(obd.value);}
   title('02 종합 의견');text(data.note||'별도 의견 없음');
   const vehiclePhotos=data.photos.filter(photo=>!photo.partKey);
   if(vehiclePhotos.length){page();title('03 차량사진');for(let i=0;i<vehiclePhotos.length;i++){const photo=vehiclePhotos[i];let src=photo.dataUrl;if(!src){const blob=await fetchPhotoBlobFromUrl(photo.url||await createPhotoSignedUrl(photo.path));src=await blobToDataUrl(blob)}const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error((i+1)+'번 사진을 불러오지 못했습니다.'));im.src=src});if(y+525>H-100){page();title('03 차량사진 · 계속')}text((i+1)+'. '+brokerPartName(photo.partKey),'#295fe8',true);const scale=Math.min((W-P*2)/img.width,430/img.height),width=img.width*scale,height=img.height*scale;ctx.fillStyle='#fff';ctx.fillRect(P,y-12,W-P*2,445);ctx.drawImage(img,(W-width)/2,y,width,height);y+=475}}else{title('03 차량사진');text('등록된 차량사진이 없습니다.');}
@@ -6133,7 +6163,7 @@ let brokerSavedFingerprint=null,brokerGuardReady=false,brokerAllowLeave=false,br
 const brokerPhotoDraftIds=new WeakMap();let brokerPhotoDraftSequence=0;
 function brokerGuardPhotoRows(photos){return (photos||[]).map(photo=>{let draft='';if(photo.dataUrl&&!photo.path){if(!brokerPhotoDraftIds.has(photo))brokerPhotoDraftIds.set(photo,++brokerPhotoDraftSequence);draft=String(brokerPhotoDraftIds.get(photo))}return {name:photo.name||'photo.jpg',partKey:photo.partKey||'',path:photo.path||'',draft}})}
 function brokerCurrentFingerprint(){return brokerWorkspaceFingerprint({workspace:captureInspectionWorkspace(),photos:brokerGuardPhotoRows(currentInspectionPhotos)})}
-function brokerHasContent(){return ['carNumber','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','mileage','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote'].some(id=>document.getElementById(id)?.value.trim())||currentInspectionPhotos.length>0||Object.keys(brokerExteriorNotes).length>0||detailCards().some(card=>detailStatus(card)!=='pending')||[...document.querySelectorAll('.acc-item')].some(pin=>pin.dataset.state)}
+function brokerHasContent(){return ['carNumber','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','mileage','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote','inspectionObd'].some(id=>document.getElementById(id)?.value.trim())||currentInspectionPhotos.length>0||Object.keys(brokerExteriorNotes).length>0||detailCards().some(card=>detailStatus(card)!=='pending')||[...document.querySelectorAll('.acc-item')].some(pin=>pin.dataset.state)}
 function brokerIsDirty(){if(brokerSavedFingerprint===null)return !!brokerHasContent();return brokerCurrentFingerprint()!==brokerSavedFingerprint}
 function markBrokerSavedRecord(record){if(!record)return;brokerSavedFingerprint=brokerWorkspaceFingerprint({workspace:record.workspace,photos:brokerGuardPhotoRows(record.photos)});updateBrokerSaveIndicator()}
 function updateBrokerSaveIndicator(){const status=document.getElementById('brokerTopSaveStatus');if(status)status.textContent=brokerSaveInFlight?'저장 중…':brokerIsDirty()?'변경사항 있음':'저장됨';const button=document.getElementById('brokerTopSave');if(button)button.disabled=!!brokerSaveInFlight}
@@ -6353,15 +6383,7 @@ function mountDealerReportCover(root,fields,photos,options){
 
 <dialog id="brokerPhotoViewer" class="photo-fullscreen"><header><span id="brokerExpandedPhotoTitle">확인 사진</span><div><button type="button" onclick="document.getElementById('brokerPhotoViewer').classList.toggle('zoomed')">확대 / 맞춤</button><button type="button" onclick="document.getElementById('brokerPhotoViewer').close()">닫기</button></div></header><div class="photo-surface"><img id="brokerExpandedPhoto" alt="확인 사진" onclick="document.getElementById('brokerPhotoViewer').classList.toggle('zoomed')"></div></dialog>
 <dialog id="brokerLeaveDialog" class="broker-leave-dialog"><h2>검차를 저장하시겠습니까?</h2><p id="brokerLeaveMessage"></p><div><button id="brokerLeaveSave" type="button" onclick="decideBrokerLeave(true)">저장하고 나가기</button><button type="button" onclick="cancelBrokerLeave()">계속 작성</button><button type="button" onclick="decideBrokerLeave(false)">저장 없이 나가기</button></div></dialog>
-<script>
-(function(){
- const bar=document.querySelector('.purchase-top-savebar,.broker-top-savebar');
- if(!bar||(!window.AndroidExternal&&!window.AndroidObd))return;
- const button=document.createElement('button');button.type='button';button.textContent='OBD 테스트';try{if(window.AndroidObd&&typeof AndroidObd.getVersion==='function')button.textContent+=' · '+AndroidObd.getVersion().replace('OBD-TEST-','v');}catch(e){}button.style.cssText='padding:8px 10px;font-size:12px;white-space:nowrap';
- button.onclick=function(){if(window.AndroidObd&&typeof AndroidObd.open==='function')AndroidObd.open();else if(window.AndroidExternal&&typeof AndroidExternal.openObdTest==='function')AndroidExternal.openObdTest();else alert('설치된 앱에 OBD 기능이 없습니다. Google Drive에서 딜러메이트.apk를 내려받아 업데이트 설치해주세요. 앱 버전은 1.1-obd-test3입니다.');};
- bar.append(button);
-})();
-</script>
+
 <script>
 var sharePreviewPhotoBusy=false;
 function renderSharePreviewPhoto(){
@@ -6384,8 +6406,10 @@ function removeSharePreviewPhoto(){if(sharePreviewPhotoBusy)return;currentInspec
 
 renderSharePreviewPhoto();
 </script>
+<script src="inspection-obd.js?v=1" defer></script>
 </body>
 </html>
+
 
 
 
