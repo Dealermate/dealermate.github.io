@@ -325,7 +325,12 @@ function openCamodooWonbu(){
     }
     if(window.AndroidExternal&&typeof AndroidExternal.openUrl==='function'){AndroidExternal.openUrl(url);return;}
   }catch(e){console.warn(e)}
-  window.open(url,'_blank','noopener,noreferrer');
+  const isMobileBrowser = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const targetUrl = window.AndroidExternal || isMobileBrowser
+    ? url
+    : 'https://www.carmodoo.co.kr/info/wonbuSearch.html';
+  window.open(targetUrl,'_blank','noopener,noreferrer');
 }
 
 function openBusinessStatus(){
