@@ -485,7 +485,12 @@ window.onRegistrationOcrResult=function(json){
 <div class="field"><label>대표자명</label><input data-k="representative"/></div><div class="field"><label>사업자번호</label><input data-k="businessNo"/></div>
 <div class="field span2"><label for="purchaseAddress">주소</label><div class="purchase-address-row"><input id="purchaseAddress" data-k="address"/><button type="button" class="smallbtn" onclick="openPurchaseAddressSearch()">주소 검색</button></div></div>
 <div class="field"><label>매입금액</label><input data-k="purchasePrice" inputmode="numeric" oninput="moneyInput(this)"/></div><div class="field"><label>한글 매입금액</label><input data-k="purchasePriceKor" placeholder="자동 입력"/></div>
-<div class="field"><label>예금주</label><input data-k="accountHolder"/></div><div class="field"><label>은행명</label><input data-k="bank"/></div>
+<div class="field"><label>예금주</label><input data-k="accountHolder"/></div><div class="field"><label for="purchaseBank">은행명</label><select id="purchaseBank" data-k="bank" onchange="directChoice(this)"><option value="">은행 선택</option>
+<optgroup label="주요 은행"><option>KB국민은행</option><option>신한은행</option><option>우리은행</option><option>하나은행</option><option>NH농협은행</option><option>IBK기업은행</option><option>SC제일은행</option><option>한국씨티은행</option><option>Sh수협은행</option><option>KDB산업은행</option><option>iM뱅크</option></optgroup>
+<optgroup label="인터넷은행"><option>카카오뱅크</option><option>케이뱅크</option><option>토스뱅크</option></optgroup>
+<optgroup label="지역은행"><option>BNK부산은행</option><option>BNK경남은행</option><option>광주은행</option><option>전북은행</option><option>제주은행</option></optgroup>
+<optgroup label="기타 금융기관"><option>지역농·축협</option><option>수협중앙회</option><option>우체국</option><option>새마을금고</option><option>신협</option><option>산림조합</option><option>저축은행</option></optgroup>
+<option value="__direct__">기타 (직접입력)</option></select><input class="direct-input" data-direct-for="bank" aria-label="은행명 직접입력" placeholder="은행명 직접입력" style="display:none;margin-top:6px"/></div>
 <div class="field span2"><label>계좌번호</label><input data-k="account"/></div>
 </div></section>
 <section class="section"><h2>기타</h2><div class="grid">
@@ -672,10 +677,14 @@ function vals(){
 }
 function setStoredValue(e,v){
   if(e.tagName==='SELECT'){
-    const values=[...e.options].map(x=>x.value);
-    if(values.includes(v)){e.value=v}
-    else if(v){e.value='__direct__';const inp=directInputFor(e.dataset.k);if(inp){inp.value=v;inp.style.display='block'}}
-    else e.value='';
+    const inp=directInputFor(e.dataset.k);
+    const isListed=[...e.options].some(x=>x.value===v && x.value!=='__direct__');
+    const isDirect=!!inp && !!v && !isListed;
+    e.value=isListed?v:isDirect?'__direct__':'';
+    if(inp){
+      inp.value=isDirect?v:'';
+      inp.style.display=isDirect?'block':'none';
+    }
   }else e.value=v;
 }
 function saveForm(silent=true){localStorage.setItem(KEY,JSON.stringify(vals()));if(!silent)alert('임시저장했습니다.');}
