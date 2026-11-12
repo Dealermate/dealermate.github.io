@@ -2794,9 +2794,8 @@ body.dealer-report-page{background:#f2f5f6}
 @media(max-width:520px){.vehicle-quote-intro{padding:20px}.vehicle-quote-intro>strong{font-size:29px}.vehicle-quote-lines dt{font-size:12px}.vehicle-quote-lines dd{font-size:14px}.vehicle-quote-lines .quote-grand dd{font-size:18px}}
 
 </style>
-<link rel="stylesheet" href="inspection-obd.css?v=1">
 </head>
-<body data-obd-kind="broker">
+<body>
 <div id="photoSourceOverlay" class="photo-source-overlay" hidden>
   <div class="photo-source-sheet" role="dialog" aria-modal="true" aria-labelledby="photoSourceTitle">
     <div class="photo-source-handle"></div>
@@ -2856,7 +2855,6 @@ body.dealer-report-page{background:#f2f5f6}
 <button class="page-tab" data-page="3" onclick="showPage(3)">세부상태</button>
 <button class="page-tab" data-page="4" onclick="showPage(4)">차량리포트</button>
 <button class="page-tab" data-page="5" onclick="showPage(5)">저장목록</button>
-<button class="page-tab" data-page="6" onclick="showPage(6)">OBD 진단</button>
 </div>
 <!-- 가격 + 검차결과 -->
 <input id="bidPriceInput" type="hidden" value="0">
@@ -3235,15 +3233,7 @@ body.dealer-report-page{background:#f2f5f6}
 </div>
 <div class="detail-navigation"><button type="button" id="detailPrev" onclick="moveDetailBatch(-1)">← 이전</button><span id="detailBatchText" aria-live="polite"></span><button type="button" id="detailNext" onclick="moveDetailBatch(1)">다음 항목 →</button></div><div id="detailEmpty" class="detail-empty" hidden>해당 항목이 없어요.</div><p id="detailReviewHint" class="detail-review-hint"></p></div>
 <!-- 검차결과 -->
-<section class="section page-panel" data-page-panel="6">
- <h2><i class="fa-solid fa-car-battery"></i> OBD 진단</h2>
- <p class="obd-intro">차량 전원을 켜고 OBD 어댑터를 연결해주세요. 차량에서 표준 OBD 저장 고장코드를 읽어 검차에 남깁니다.</p>
- <input type="hidden" id="inspectionObd">
- <div id="obdState" class="obd-result"><small>저장 고장코드 조회</small><strong id="obdResult"></strong><p id="obdTime"></p></div>
- <div class="obd-actions"><button type="button" class="record-btn primary" id="obdStart">OBD 진단 시작</button><button type="button" class="record-btn" id="obdRemove" hidden>기록 지우기</button></div>
- <p id="obdStatus" class="obd-status" role="status"></p>
- <p class="obd-intro">조회 범위에 한한 결과입니다. 코드가 없어도 차량 전체가 정상이라는 뜻은 아닙니다.</p>
-</section>
+<input type="hidden" id="inspectionObd">
 <div class="section page-panel" data-page-panel="4">
 <h2><i class="fa-solid fa-clipboard-check"></i> 차량리포트</h2>
 <div class="result-area" id="resultArea" style="display:none;"></div>
@@ -3943,7 +3933,7 @@ function initCoating(){
     }
 
     function loadInputs(){
-      document.getElementById('inspectionObd').value=brokerStorage.getItem('inspectionObd')||'';window.refreshInspectionObd?.();
+      document.getElementById('inspectionObd').value=brokerStorage.getItem('inspectionObd')||'';
       const baseKeys=['bidPriceInput','carNumber','mileage','carName','carGrade','brokerSalePrice','brokerVehicleClass','brokerPerformanceInsurance','brokerQuoteCarAccount','brokerQuoteTransferAccount','brokerYear','brokerFuel','brokerColor','brokerInspectionExpiry','brokerDate','brokerInspector','brokerOptions','brokerFactoryOptions','brokerAftermarketOptions','brokerNote','exteriorCount','wheelScratchCount','spareKey','tireCount','repair','carAdvantage','Memo','inspectionObd'];
       baseKeys.forEach(id=>{
         const el=document.getElementById(id);
@@ -4328,8 +4318,7 @@ function initCoating(){
       // 1. 현재 불러온 저장기록과 연결 해제
       //    다음 저장 시 기존 기록 수정이 아니라 "새 기록"으로 생성됨
       // -----------------------------------------------------
-      window.invalidateInspectionObd?.();
-      document.getElementById("inspectionObd").value="";window.refreshInspectionObd?.();
+      document.getElementById("inspectionObd").value="";
       brokerStorage.removeItem('activeInspectionRecordId');
     if(typeof renderBrokerShare==='function')renderBrokerShare(null);
 
@@ -4482,7 +4471,7 @@ function initCoating(){
 
     // ===== 페이지 이동 =====
     let currentPage = 0;
-    const PAGE_COUNT = 7;
+    const PAGE_COUNT = 6;
     function showPage(page, scrollTop=true){
       cancelCoatingHold();
       currentPage = Math.max(0, Math.min(PAGE_COUNT-1, Number(page)||0));
@@ -4504,7 +4493,6 @@ function initCoating(){
       if(currentPage === 5 && typeof renderSavedRecords === 'function'){
         renderSavedRecords();
       }
-      if(currentPage===6)window.refreshInspectionObd?.();
       if(scrollTop) window.scrollTo({top:0,behavior:'smooth'});
     }
     function changePage(delta){ showPage(currentPage+delta); }
@@ -4867,8 +4855,7 @@ function captureInspectionWorkspace(){
   };
 }
 
-function restoreInspectionWorkspace(workspace){
-  window.invalidateInspectionObd?.();brokerStorage.removeItem('inspectionObd');
+function restoreInspectionWorkspace(workspace){brokerStorage.removeItem('inspectionObd');
   const keepTheme=brokerStorage.getItem('calculatorTheme');
 
   brokerStorage.setItem('exteriorNotes',JSON.stringify(workspace?.exteriorNotes||{}));
@@ -5999,7 +5986,7 @@ function renderBrokerReport(){
  section('05 교환·판금 확인',brokerAccidentDiagram(data.accidents))+
  section('06 세부상태',overview+details)+
  section('07 구매견적서',vehicleQuoteMarkup(data.fields))+
- (data.fields.find(f=>f.label==='OBD 진단')?section('08 OBD 진단','<p class="obd-report-copy">'+e(data.fields.find(f=>f.label==='OBD 진단').value)+'</p>'):'')+
+ (data.fields.find(f=>f.label==='OBD 진단')?section('08 OBD 진단','<p class="obd-report-copy" style="white-space:pre-line;overflow-wrap:anywhere">'+e(data.fields.find(f=>f.label==='OBD 진단').value)+'</p>'):'')+
  '<footer class="buyer-report-foot">검차 시점에 확인한 내용을 기록한 리포트입니다. 미확인·확인불가 항목은 추가 확인이 필요합니다.</footer></article>';
  mountVehicleExteriorMap(box.querySelector('.report-exterior-map-host'),data.exterior,data.photos,{key:'editor',photoUrl:p=>p.dataUrl||p.url||'',openPhoto:(_p,index)=>openBrokerPhoto(index)});
  mountDealerReportCover(box.querySelector('.buyer-report'),data.fields,vehiclePhotos,{key:'editor',photoUrl:p=>p.dataUrl||p.url||'',openPhoto:p=>openBrokerPhoto(data.photos.indexOf(p))});
@@ -6406,9 +6393,9 @@ function removeSharePreviewPhoto(){if(sharePreviewPhotoBusy)return;currentInspec
 
 renderSharePreviewPhoto();
 </script>
-<script src="inspection-obd.js?v=1" defer></script>
 </body>
 </html>
+
 
 
 
