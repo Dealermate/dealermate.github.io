@@ -2653,8 +2653,10 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 .purchase-top-savebar{position:sticky;top:8px;z-index:90;max-width:760px;margin:12px auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border:1px solid #dce5f3;border-radius:12px;background:#fff;box-shadow:0 4px 16px #101b3010}.purchase-top-savebar strong{display:block;font-size:13px;color:#243e64}.purchase-top-savebar span{display:block;font-size:11px;color:#77869c}.purchase-top-savebar button{padding:10px 18px;border:0;border-radius:8px;background:#295fe8;color:#fff;font:inherit;font-weight:700;font-size:13px}.page-tabs{top:86px}.purchase-leave-dialog{width:min(430px,calc(100% - 28px));border:1px solid #dce4f1;border-radius:17px;background:#fff;color:#1b2b42;padding:24px}.purchase-leave-dialog::backdrop{background:#101b3090}.purchase-leave-dialog h2{font-size:19px;margin-top:0}.purchase-leave-dialog p{font-size:14px;line-height:1.7}.purchase-leave-dialog>div{display:flex;flex-direction:column;gap:9px}.purchase-leave-dialog button{padding:12px;border:1px solid #dce4ef;border-radius:9px;background:#f5f7fb;color:#314965;font:inherit;font-size:13px}.purchase-leave-dialog #purchaseLeaveSave{background:#295fe8;color:#fff;border-color:#295fe8}body.dark-mode .purchase-top-savebar{background:#18283f;border-color:#365174}body.dark-mode .purchase-top-savebar strong{color:#dce8fa}@media print{.purchase-top-savebar,.purchase-leave-dialog{display:none!important}}.purchase-share-dialog{width:min(520px,calc(100% - 28px));max-height:85dvh;overflow:auto;padding:22px;border:1px solid #dce4ef;border-radius:16px;background:#fff;color:#243e64}.purchase-share-dialog::backdrop{background:#101b3090}.purchase-share-dialog h2{font-size:19px;margin-top:0}.purchase-share-dialog p{font-size:13px;line-height:1.7}.purchase-share-dialog textarea{width:100%;min-height:85px;resize:vertical;font:12px/1.5 sans-serif;border:1px solid #dce4ef;border-radius:8px;padding:10px}.purchase-share-actions{display:flex;flex-wrap:wrap;gap:8px}.purchase-share-actions button,.purchase-share-close{padding:10px 13px;border:1px solid #dce4ef;border-radius:8px;background:#f1f5fb;color:#254b78;font:inherit;font-size:13px}.purchase-share-close{display:block;margin:0 0 10px auto}.purchase-share-note{color:#71839b}button:disabled{opacity:.55}@media print{.purchase-share-dialog{display:none!important}}
 .purchase-part-dialog{width:min(560px,calc(100% - 24px));max-height:85dvh;overflow:auto;border:1px solid #dce4ef;border-radius:15px;padding:20px;background:var(--card);color:var(--text)}.purchase-part-dialog::backdrop{background:#101b3099}.purchase-part-dialog h3{margin-top:0}.purchase-part-actions{display:flex;gap:8px;flex-wrap:wrap}.purchase-part-actions button,.purchase-part-dialog button{padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card-2);color:var(--text);font:inherit}.purchase-part-photos,.purchase-detail-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.purchase-photo-thumb{display:block;width:100%;padding:0!important;border:0;overflow:hidden;border-radius:8px;background:transparent;cursor:zoom-in}.purchase-photo-thumb img{display:block;width:100%;height:125px;object-fit:contain}.purchase-part-photos>p{font-size:12px;color:var(--muted)}.purchase-finding-link{display:inline-block;margin:4px 0 4px 10px;padding:5px 9px;border:1px solid #c5d6ec;border-radius:6px;background:#edf3fc;color:#254b78;cursor:pointer;font:inherit;font-size:12px}.deduction-mark{padding:0;cursor:pointer}.purchase-photo-viewer{width:100vw;height:100dvh;max-width:none;max-height:none;padding:12px;margin:0;border:0;background:#101b30;color:white}.purchase-photo-viewer::backdrop{background:#101b30}.purchase-photo-viewer header{display:flex;justify-content:space-between;gap:12px;align-items:center;height:48px}.purchase-photo-viewer button{padding:8px 16px;background:#24416a;color:white;border:0;border-radius:8px}.purchase-photo-viewer img{width:100%;height:calc(100% - 50px);object-fit:contain}.photo-item>small{display:block;font-size:10px;color:var(--muted)}@media print{.purchase-part-dialog,.purchase-photo-viewer,.purchase-finding-link{display:none!important}}
 .purchase-paint-note{margin:14px 0;padding:14px 16px;border:1px solid var(--line);border-radius:9px;background:var(--card-2);font-size:12px}.purchase-paint-note .result-empty{margin:0;line-height:1.8}.purchase-paint-note-title{font-weight:800;color:var(--text)}.purchase-paint-note dl{margin:9px 0}.purchase-paint-rate{display:grid;grid-template-columns:80px 1fr;gap:10px}.purchase-paint-rate dd{margin:0;font-weight:700}.purchase-paint-current{border-top:1px solid var(--line);padding-top:8px;color:var(--muted)}</style>
+<link rel="stylesheet" href="infocar-screens.css?v=1">
+<script src="infocar-reader.js?v=1" defer></script>
 </head>
-<body>
+<body data-infocar-kind="purchase">
 <div id="photoSourceOverlay" class="photo-source-overlay" hidden>
   <div class="photo-source-sheet" role="dialog" aria-modal="true" aria-labelledby="photoSourceTitle">
     <div class="photo-source-handle"></div>
@@ -2717,6 +2719,7 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 <button class="page-tab" data-page="3" onclick="showPage(3)">세부상태</button>
 <button class="page-tab" data-page="4" onclick="showPage(4)">검수리포트</button>
 <button class="page-tab" data-page="5" onclick="showPage(5)">저장목록</button>
+<button class="page-tab" data-page="6" onclick="showPage(6)">OBD 진단</button>
 </div>
 <!-- 가격 + 검수리포트 -->
 <div class="section page-panel active" data-page-panel="0">
@@ -3158,6 +3161,17 @@ body.dark-mode .chip.exchange{background:#412431;color:#ffabb1;border-color:#704
 <div class="detail-navigation"><button type="button" id="detailPrev" onclick="moveDetailBatch(-1)">← 이전</button><span id="detailBatchText" aria-live="polite"></span><button type="button" id="detailNext" onclick="moveDetailBatch(1)">다음 항목 →</button></div><div id="detailEmpty" class="detail-empty" hidden>해당 항목이 없어요.</div><p id="detailReviewHint" class="detail-review-hint"></p></div>
 <!-- 검수리포트 -->
 <input type="hidden" id="inspectionObd">
+<section class="section page-panel" data-page-panel="6">
+ <h2><i class="fa-solid fa-car-battery"></i> OBD 진단</h2>
+ <p class="infocar-intro">인포카에서 상세진단을 실행한 뒤 결과 화면을 첨부해주세요. 긴 결과는 스크롤 캡처 한 장으로 저장할 수 있어요.</p>
+ <div class="infocar-actions"><button type="button" class="record-btn primary" id="infocarOpen">인포카 앱 열기</button>
+ <button type="button" class="record-btn" onclick="document.getElementById('infocarFiles').click()">결과 스크린샷 첨부</button></div>
+ <input id="infocarFiles" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" multiple hidden aria-label="인포카 결과 스크린샷">
+ <p id="infocarStatus" class="infocar-intro" role="status"></p>
+ <div id="infocarAttachments" class="infocar-attachments" aria-live="polite"></div>
+ <p class="infocar-intro">첨부한 화면은 저장 후 리포트에 표시됩니다. 공유할 사진에 불필요한 개인정보가 없는지 확인해주세요.</p>
+</section>
+
 <div class="section page-panel" data-page-panel="4">
 <h2><i class="fa-solid fa-clipboard-check"></i> 검수리포트</h2>
 <div class="result-area" id="resultArea" style="display:none;"></div>
@@ -4101,6 +4115,7 @@ function deductionDiagramHtml(kind){
     function renderResultBox({selectedPaint, selectedAccidents, deductionLines, paintLines=[], accidentLines=[], detailLines=[], totalDiscount, finalPrice, paintSetoff}){
       const box = document.getElementById('resultArea');
       const hasAny = (
+        currentInspectionPhotos.some(p=>p.partKey==="__infocar_diag") ||
         inspectionObdRows().length ||
         coatingLines().length ||
         selectedPaint.length ||
@@ -4190,6 +4205,8 @@ function deductionDiagramHtml(kind){
 
         <div class="result-grid">
           <div class="result-meta">
+            ${currentInspectionPhotos.some(p=>p.partKey==='__infocar_diag') ? `<div class="result-card"><h3>인포카 상세진단</h3><ul class="result-list"><li data-part-key="__infocar_diag">인포카 결과 스크린샷</li></ul><div class="infocar-actions">${infocarReportButtons(currentInspectionPhotos)}</div></div>` : ''}
+
             ${inspectionObdRows().length ? `<div class="result-card"><h3>OBD 진단</h3><ul class="result-list">${inspectionObdRows().map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
 
 
@@ -4529,7 +4546,7 @@ function deductionDiagramHtml(kind){
 
     // ===== 페이지 이동 =====
     let currentPage = 0;
-    const PAGE_COUNT = 6;
+    const PAGE_COUNT = 7;
     function showPage(page, scrollTop=true){
       cancelCoatingHold();
       currentPage = Math.max(0, Math.min(PAGE_COUNT-1, Number(page)||0));
@@ -4862,6 +4879,9 @@ function uuidForInspection(){
   return 'inspection-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 }
 
+function infocarReportButtons(photos){
+ return (photos||[]).filter(p=>p.partKey==='__infocar_diag').map((_,i)=>'<button type="button" class="infocar-link" data-infocar-index="'+i+'">결과 '+(i+1)+' 보기</button>').join(' ');
+}
 function inspectionObdRows(raw=document.getElementById('inspectionObd')?.value){
  try{
   if(typeof raw!=='string'||!raw||raw.length>10000)return [];
@@ -5011,6 +5031,7 @@ async function deletePhotoPaths(paths){
 }
 
 async function saveInspectionRecord(){
+  if(window.infocarPhotoBusy){alert("스크린샷을 읽는 중입니다. 잠시 후 저장해주세요.");return null;}
   if(sharePreviewPhotoBusy){alert('미리보기 사진을 준비하고 있습니다. 잠시 후 저장해주세요.');return null;}
   const user=requireCloudUser();
   if(!user) return;
@@ -5365,6 +5386,7 @@ function choosePhotoSource(source){
    PHOTO HANDLING
 ========================================================= */
 function renderInspectionPhotos(){
+  window.renderInfocarAttachments?.();
   renderSharePreviewPhoto();
   renderPurchasePartPhotos();renderPurchaseDetailPhotos();
   if(purchaseGuardReady)updatePurchaseSaveIndicator();
@@ -5379,11 +5401,11 @@ function renderInspectionPhotos(){
     document.getElementById('photoCountTextTop')
   ].filter(Boolean);
 
-  counts.forEach(el=>el.textContent=String(currentInspectionPhotos.filter(p=>p.partKey!=='__share_cover').length));
+  counts.forEach(el=>el.textContent=String(currentInspectionPhotos.filter(p=>!['__share_cover','__infocar_diag'].includes(p.partKey)).length));
 
   if(!previews.length) return;
 
-  if(!currentInspectionPhotos.some(p=>p.partKey!=='__share_cover')){
+  if(!currentInspectionPhotos.some(p=>!['__share_cover','__infocar_diag'].includes(p.partKey))){
     previews.forEach(preview=>{
       preview.innerHTML='<div class="photo-empty">첨부된 사진이 없습니다.</div>';
     });
@@ -5391,7 +5413,7 @@ function renderInspectionPhotos(){
   }
 
   const markup=currentInspectionPhotos.map((photo,index)=>{
-    if(photo.partKey==='__share_cover')return '';
+    if(['__share_cover','__infocar_diag'].includes(photo.partKey))return '';
     const src=photo.dataUrl||photo.url||'';
     return `
       <div class="photo-item">
@@ -6146,6 +6168,7 @@ function removeSharePreviewPhoto(){if(sharePreviewPhotoBusy)return;currentInspec
 
 renderSharePreviewPhoto();
 </script>
+<script src="infocar-editor.js?v=1" defer></script>
 </body>
 </html>
 

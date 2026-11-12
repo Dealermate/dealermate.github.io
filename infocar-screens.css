@@ -1,0 +1,13 @@
+body .page-tabs{grid-template-columns:repeat(7,minmax(0,1fr))}
+@media(max-width:720px){body .page-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.infocar-intro{color:var(--muted,#566780);line-height:1.65;font-size:13px}
+.infocar-actions,.infocar-attachments{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.infocar-attachments>div{display:flex;align-items:center;gap:4px}
+.infocar-link{padding:8px 11px;border:1px solid #b7c8e2;border-radius:8px;background:#edf4ff;color:#18365d;font:inherit;font-weight:650;cursor:pointer}
+.infocar-reader{width:min(880px,calc(100% - 16px));max-height:92dvh;padding:0;border:1px solid #bccde4;border-radius:14px;background:#f5f8fd;color:#142640;overflow:hidden}
+.infocar-reader::backdrop{background:#0b142dcc}
+.infocar-reader header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:9px;background:#fff}
+.infocar-reader header div{display:flex;gap:6px}
+.infocar-scroll{height:min(76dvh,860px);overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y pinch-zoom}
+.infocar-scroll img{display:block;width:100%;max-width:none;height:auto;max-height:none;object-fit:initial}
+.infocar-scroll.zoom img{width:200%}

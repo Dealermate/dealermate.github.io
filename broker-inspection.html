@@ -2794,8 +2794,10 @@ body.dealer-report-page{background:#f2f5f6}
 @media(max-width:520px){.vehicle-quote-intro{padding:20px}.vehicle-quote-intro>strong{font-size:29px}.vehicle-quote-lines dt{font-size:12px}.vehicle-quote-lines dd{font-size:14px}.vehicle-quote-lines .quote-grand dd{font-size:18px}}
 
 </style>
+<link rel="stylesheet" href="infocar-screens.css?v=1">
+<script src="infocar-reader.js?v=1" defer></script>
 </head>
-<body>
+<body data-infocar-kind="broker">
 <div id="photoSourceOverlay" class="photo-source-overlay" hidden>
   <div class="photo-source-sheet" role="dialog" aria-modal="true" aria-labelledby="photoSourceTitle">
     <div class="photo-source-handle"></div>
@@ -2855,6 +2857,7 @@ body.dealer-report-page{background:#f2f5f6}
 <button class="page-tab" data-page="3" onclick="showPage(3)">세부상태</button>
 <button class="page-tab" data-page="4" onclick="showPage(4)">차량리포트</button>
 <button class="page-tab" data-page="5" onclick="showPage(5)">저장목록</button>
+<button class="page-tab" data-page="6" onclick="showPage(6)">OBD 진단</button>
 </div>
 <!-- 가격 + 검차결과 -->
 <input id="bidPriceInput" type="hidden" value="0">
@@ -3234,6 +3237,17 @@ body.dealer-report-page{background:#f2f5f6}
 <div class="detail-navigation"><button type="button" id="detailPrev" onclick="moveDetailBatch(-1)">← 이전</button><span id="detailBatchText" aria-live="polite"></span><button type="button" id="detailNext" onclick="moveDetailBatch(1)">다음 항목 →</button></div><div id="detailEmpty" class="detail-empty" hidden>해당 항목이 없어요.</div><p id="detailReviewHint" class="detail-review-hint"></p></div>
 <!-- 검차결과 -->
 <input type="hidden" id="inspectionObd">
+<section class="section page-panel" data-page-panel="6">
+ <h2><i class="fa-solid fa-car-battery"></i> OBD 진단</h2>
+ <p class="infocar-intro">인포카에서 상세진단을 실행한 뒤 결과 화면을 첨부해주세요. 긴 결과는 스크롤 캡처 한 장으로 저장할 수 있어요.</p>
+ <div class="infocar-actions"><button type="button" class="record-btn primary" id="infocarOpen">인포카 앱 열기</button>
+ <button type="button" class="record-btn" onclick="document.getElementById('infocarFiles').click()">결과 스크린샷 첨부</button></div>
+ <input id="infocarFiles" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" multiple hidden aria-label="인포카 결과 스크린샷">
+ <p id="infocarStatus" class="infocar-intro" role="status"></p>
+ <div id="infocarAttachments" class="infocar-attachments" aria-live="polite"></div>
+ <p class="infocar-intro">첨부한 화면은 저장 후 리포트에 표시됩니다. 공유할 사진에 불필요한 개인정보가 없는지 확인해주세요.</p>
+</section>
+
 <div class="section page-panel" data-page-panel="4">
 <h2><i class="fa-solid fa-clipboard-check"></i> 차량리포트</h2>
 <div class="result-area" id="resultArea" style="display:none;"></div>
@@ -4471,7 +4485,7 @@ function initCoating(){
 
     // ===== 페이지 이동 =====
     let currentPage = 0;
-    const PAGE_COUNT = 6;
+    const PAGE_COUNT = 7;
     function showPage(page, scrollTop=true){
       cancelCoatingHold();
       currentPage = Math.max(0, Math.min(PAGE_COUNT-1, Number(page)||0));
@@ -4805,6 +4819,9 @@ function uuidForInspection(){
   return 'inspection-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 }
 
+function infocarReportButtons(photos){
+ return (photos||[]).filter(p=>p.partKey==='__infocar_diag').map((_,i)=>'<button type="button" class="infocar-link" data-infocar-index="'+i+'">결과 '+(i+1)+' 보기</button>').join(' ');
+}
 function inspectionObdRows(raw=document.getElementById('inspectionObd')?.value){
  try{
   if(typeof raw!=='string'||!raw||raw.length>10000)return [];
@@ -4955,6 +4972,7 @@ async function deletePhotoPaths(paths){
 }
 
 async function saveInspectionRecord(){
+  if(window.infocarPhotoBusy){alert("스크린샷을 읽는 중입니다. 잠시 후 저장해주세요.");return null;}
   if(sharePreviewPhotoBusy){alert('미리보기 사진을 준비하고 있습니다. 잠시 후 저장해주세요.');return null;}
   const user=requireCloudUser();
   if(!user) return;
@@ -5304,6 +5322,7 @@ function choosePhotoSource(source){
    PHOTO HANDLING
 ========================================================= */
 function renderInspectionPhotos(){
+  window.renderInfocarAttachments?.();
   renderSharePreviewPhoto();
   if(typeof brokerGuardReady!=='undefined'&&brokerGuardReady)updateBrokerSaveIndicator();
   if(typeof renderBrokerReport==='function' && typeof detailReady!=='undefined' && detailReady)renderBrokerReport();
@@ -5986,6 +6005,7 @@ function renderBrokerReport(){
  section('05 교환·판금 확인',brokerAccidentDiagram(data.accidents))+
  section('06 세부상태',overview+details)+
  section('07 구매견적서',vehicleQuoteMarkup(data.fields))+
+ (data.photos.some(p=>p.partKey==='__infocar_diag')?section('09 인포카 상세진단','<div class="infocar-actions">'+infocarReportButtons(data.photos)+'</div>'):'')+
  (data.fields.find(f=>f.label==='OBD 진단')?section('08 OBD 진단','<p class="obd-report-copy" style="white-space:pre-line;overflow-wrap:anywhere">'+e(data.fields.find(f=>f.label==='OBD 진단').value)+'</p>'):'')+
  '<footer class="buyer-report-foot">검차 시점에 확인한 내용을 기록한 리포트입니다. 미확인·확인불가 항목은 추가 확인이 필요합니다.</footer></article>';
  mountVehicleExteriorMap(box.querySelector('.report-exterior-map-host'),data.exterior,data.photos,{key:'editor',photoUrl:p=>p.dataUrl||p.url||'',openPhoto:(_p,index)=>openBrokerPhoto(index)});
@@ -6108,7 +6128,7 @@ async function publishBrokerShare(updating){
   const signed=await Promise.all((saved.photos||[]).map(async photo=>{
    const {data,error}=await supabaseClient.storage.from(CLOUD_PHOTO_BUCKET).createSignedUrl(photo.path,7*24*60*60);
    if(error||!data?.signedUrl)throw error||new Error('공유 사진 주소 생성 실패');
-   return {url:data.signedUrl,label:brokerPartName(photo.partKey),partKey:photo.partKey||'',category:photo.partKey==='__share_cover'?'preview':photo.partKey?'finding':'vehicle'};
+   return {url:data.signedUrl,label:photo.partKey==='__infocar_diag'?'인포카 상세진단':brokerPartName(photo.partKey),partKey:photo.partKey||'',category:photo.partKey==='__infocar_diag'?'diagnostic':photo.partKey==='__share_cover'?'preview':photo.partKey?'finding':'vehicle'};
   }));
   assertUnchanged();
   const snapshot={fields:before.fields,exterior:before.exterior,detail:before.detail,accidents:before.accidents,note:before.note,photos:signed};
@@ -6393,6 +6413,7 @@ function removeSharePreviewPhoto(){if(sharePreviewPhotoBusy)return;currentInspec
 
 renderSharePreviewPhoto();
 </script>
+<script src="infocar-editor.js?v=1" defer></script>
 </body>
 </html>
 
