@@ -310,10 +310,68 @@ body.purchase-exporting .sheet td{border-width:1px!important}
 
 .direct-input{width:100%;box-sizing:border-box}
 .field select{width:100%}
+.purchase-address-row{display:flex;align-items:stretch;gap:8px}
+.purchase-address-row input{flex:1;min-width:0}
+.purchase-address-row button{flex:none;white-space:nowrap}
+.purchase-address-dialog{box-sizing:border-box;width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:14px;background:var(--card,#fff);color:inherit;overflow:auto}
+.purchase-address-dialog::backdrop{background:#0008}
+.purchase-address-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px}
+.purchase-address-results{height:min(460px,calc(100dvh - 88px))}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+
+let purchasePostcodeLoader;
+let purchaseAddressSearchId = 0;
+function loadPurchasePostcode() {
+  if (window.kakao?.Postcode) return Promise.resolve(window.kakao.Postcode);
+  if (!purchasePostcodeLoader) {
+    purchasePostcodeLoader = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+      script.onload = () => window.kakao?.Postcode ? resolve(window.kakao.Postcode) : reject(new Error('Postcode unavailable'));
+      script.onerror = () => reject(new Error('Postcode unavailable'));
+      document.head.append(script);
+    }).catch(error => {
+      purchasePostcodeLoader = null;
+      throw error;
+    });
+  }
+  return purchasePostcodeLoader;
+}
+async function openPurchaseAddressSearch() {
+  const input = document.querySelector('[data-k="address"]');
+  const dialog = document.getElementById('purchaseAddressDialog');
+  const results = document.getElementById('purchaseAddressResults');
+  if (!input || dialog.open) return;
+  const searchId = ++purchaseAddressSearchId;
+  dialog.onclose = () => { if (!dialog.open) results.replaceChildren(); };
+  results.textContent = '주소 검색을 불러오는 중…';
+  dialog.showModal();
+  try {
+    const Postcode = await loadPurchasePostcode();
+    if (!dialog.open || searchId !== purchaseAddressSearchId) return;
+    results.replaceChildren();
+    new Postcode({
+      width: '100%',
+      height: '100%',
+      oncomplete(data) {
+        if (!dialog.open || searchId !== purchaseAddressSearchId) return;
+        const address = (data.userSelectedType === 'J' ? data.jibunAddress : data.roadAddress) || data.address;
+        dialog.close();
+        results.replaceChildren();
+        if (!address) return;
+        input.value = address;
+        input.dispatchEvent(new Event('input', {bubbles:true}));
+        input.focus();
+        input.setSelectionRange(address.length, address.length);
+      }
+    }).embed(results);
+  } catch (error) {
+    if (dialog.open && searchId === purchaseAddressSearchId) results.textContent = '주소 검색을 불러오지 못했습니다. 닫고 다시 시도하거나 주소를 직접 입력해 주세요.';
+  }
+}
 
 function openCamodooWonbu(){
   const url='https://www.carmodoo.com/app/tool/search_reg_02.html';
@@ -425,7 +483,7 @@ window.onRegistrationOcrResult=function(json){
 <div class="field"><label>성명(상호)</label><input data-k="sellerName"/></div><div class="field"><label>주민(법인)번호</label><input data-k="sellerId"/></div>
 <div class="field span2"><button type="button" class="smallbtn" style="width:100%;padding:11px" onclick="openBusinessStatus()">사업자상태 조회</button></div>
 <div class="field"><label>대표자명</label><input data-k="representative"/></div><div class="field"><label>사업자번호</label><input data-k="businessNo"/></div>
-<div class="field span2"><label>주소</label><input data-k="address"/></div>
+<div class="field span2"><label for="purchaseAddress">주소</label><div class="purchase-address-row"><input id="purchaseAddress" data-k="address"/><button type="button" class="smallbtn" onclick="openPurchaseAddressSearch()">주소 검색</button></div></div>
 <div class="field"><label>매입금액</label><input data-k="purchasePrice" inputmode="numeric" oninput="moneyInput(this)"/></div><div class="field"><label>한글 매입금액</label><input data-k="purchasePriceKor" placeholder="자동 입력"/></div>
 <div class="field"><label>예금주</label><input data-k="accountHolder"/></div><div class="field"><label>은행명</label><input data-k="bank"/></div>
 <div class="field span2"><label>계좌번호</label><input data-k="account"/></div>
@@ -736,4 +794,8 @@ function fileStamp(){
 }
 
 </script>
+<dialog id="purchaseAddressDialog" class="purchase-address-dialog" aria-labelledby="purchaseAddressTitle">
+  <div class="purchase-address-head"><strong id="purchaseAddressTitle">주소 검색</strong><form method="dialog"><button type="submit" class="smallbtn" aria-label="주소 검색 닫기">닫기</button></form></div>
+  <div id="purchaseAddressResults" class="purchase-address-results"></div>
+</dialog>
 </body></html>
